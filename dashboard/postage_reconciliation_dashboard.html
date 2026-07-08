@@ -1,0 +1,535 @@
+<!--
+  POSTAGE RECONCILIATION SYSTEM · STANDALONE DASHBOARD (single file, no dependencies)
+  Business reference : Accounts postage_reconciliation_v3_merged.xlsx (v3.4) — README sheet mapping
+  Data source        : PostgreSQL via Claude MCP (read-only). Reporting week W27 2026
+                       (2026-06-29 -> 2026-07-05), as-of 2026-07-08.
+
+  CORRECTED DATA MODEL (fixes prior mis-fetch):
+   • Actual Postage Cost  = order_shipping_billing_detail.carrier_charge  (reliable, 4.8% null).
+   • Expected Cost        = prior 8-week (W19-W26) avg carrier_charge per carrier × current labels
+                            — the README Section-15 "fall back to a default per carrier" rule.
+                            (shipping_template_price is 67% zero -> NOT used; that was the earlier bug.)
+   • Variance / Status    = Actual - Expected, classified OK/CHECK/LEAK/KILL by the workbook formula.
+   Counts are authoritative. £ from a single real column (carrier_charge). No workbook logic invented.
+-->
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Postage Reconciliation Dashboard</title>
+<style>
+  :root{
+    --header:#15243d; --header-2:#1d3357; --band:#b03a3a;
+    --bg:#eaeef4; --surface:#ffffff; --surface-2:#f5f8fc; --surface-3:#eef3f9;
+    --text:#16223a; --muted:#647089; --border:#dde4ee; --border-2:#e8edf5;
+    --accent:#2f6fd0; --accent-weak:#e7f0fc;
+    --ok:#177a44; --ok-bg:#dcf5e6; --check:#9a6212; --check-bg:#fbeecb;
+    --leak:#c62828; --leak-bg:#fbe0df; --kill:#7a1620; --kill-bg:#f6d3d6;
+    --pass:#177a44; --pass-bg:#dcf5e6; --fail:#c62828; --fail-bg:#fbe0df; --na:#647089; --na-bg:#eaeef4;
+    --pos:#c62828; --neg:#177a44;
+    --shadow:0 1px 2px rgba(20,35,64,.06),0 2px 8px rgba(20,35,64,.06);
+    --radius:12px; --r-sm:8px;
+  }
+  html[data-theme="dark"]{
+    --header:#0d1729; --header-2:#13233f; --band:#a23a3a;
+    --bg:#0a1220; --surface:#131f36; --surface-2:#182842; --surface-3:#1d3050;
+    --text:#e7eef8; --muted:#93a2bd; --border:#25385a; --border-2:#20314f;
+    --accent:#5c96de; --accent-weak:#17294a;
+    --ok:#48d183; --ok-bg:#0e3524; --check:#f0b442; --check-bg:#392a08;
+    --leak:#f2726f; --leak-bg:#3d1515; --kill:#f4a3a3; --kill-bg:#4a1820;
+    --pass:#48d183; --pass-bg:#0e3524; --fail:#f2726f; --fail-bg:#3d1515; --na:#93a2bd; --na-bg:#1b2c48;
+    --pos:#f2726f; --neg:#48d183;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 2px 10px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--text);font-size:13.5px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  /* Header */
+  header.app{background:linear-gradient(180deg,var(--header),var(--header-2));color:#fff;
+    padding:0 24px;height:60px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:50;
+    box-shadow:0 2px 10px rgba(0,0,0,.22)}
+  header.app .logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#3a6fb5,#6ea0dd);
+    display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+  header.app .brand{margin-right:auto;display:flex;flex-direction:column;gap:1px;min-width:0}
+  header.app h1{font-size:16px;margin:0;font-weight:650;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  header.app .sub{font-size:11px;color:#9fb0cc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hbadge{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);padding:5px 12px;
+    border-radius:8px;font-size:11px;color:#cdd9ec;white-space:nowrap;line-height:1.3}
+  .hbadge b{color:#fff;font-weight:600}
+  .theme-btn{background:rgba(255,255,255,.10);color:#fff;border:1px solid rgba(255,255,255,.2);
+    padding:7px 12px;border-radius:8px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:6px;font-weight:550}
+  .theme-btn:hover{background:rgba(255,255,255,.2)}
+  /* Tabs */
+  nav.tabs{background:var(--surface);border-bottom:1px solid var(--border);display:flex;gap:2px;
+    padding:0 18px;position:sticky;top:60px;z-index:40;overflow-x:auto;scrollbar-width:thin}
+  nav.tabs button{background:none;border:none;border-bottom:2.5px solid transparent;color:var(--muted);
+    padding:12px 15px;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;transition:.15s}
+  nav.tabs button:hover{color:var(--text);background:var(--surface-2)}
+  nav.tabs button.active{color:var(--accent);border-bottom-color:var(--accent)}
+  /* Reporting-week band (mirrors the workbook red banner) */
+  .weekband{background:var(--band);color:#fff;padding:7px 24px;font-size:12px;font-weight:600;letter-spacing:.3px;
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .weekband .dot{width:7px;height:7px;border-radius:50%;background:#ffd9d9}
+  .weekband .light{font-weight:400;color:#ffe3e3}
+  /* Filters */
+  .filters{background:var(--surface-2);border-bottom:1px solid var(--border);padding:10px 24px;
+    display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+  .filters .fld{display:flex;flex-direction:column;gap:3px}
+  .filters label{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700}
+  .filters select,.filters input{background:var(--surface);border:1px solid var(--border);color:var(--text);
+    padding:7px 10px;border-radius:var(--r-sm);font-size:12.5px;min-width:150px;outline:none;transition:.15s}
+  .filters select:focus,.filters input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-weak)}
+  .filters .clear{background:none;border:1px solid var(--border);color:var(--muted);padding:8px 13px;
+    border-radius:var(--r-sm);cursor:pointer;font-size:12px;font-weight:600}
+  .filters .clear:hover{color:var(--accent);border-color:var(--accent)}
+  /* Layout — wide, minimal side margin */
+  main{padding:20px 24px 8px;max-width:1860px;margin:0 auto}
+  .page{display:none;animation:fade .22s ease}
+  .page.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .note{background:var(--accent-weak);border:1px solid var(--border);border-left:3px solid var(--accent);
+    border-radius:var(--r-sm);padding:10px 13px;font-size:12px;color:var(--text);margin-bottom:18px}
+  .note b{color:var(--accent)}
+  .note code{background:var(--surface-3);padding:1px 5px;border-radius:4px;font-size:11px}
+  h2.sec{font-size:13px;margin:24px 0 11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);
+    display:flex;align-items:center;gap:8px}
+  h2.sec::before{content:"";width:3px;height:14px;background:var(--accent);border-radius:2px}
+  h2.sec:first-child{margin-top:2px}
+  .muted{color:var(--muted)}
+  /* KPI cards */
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(184px,1fr));gap:13px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:15px 16px;
+    box-shadow:var(--shadow);position:relative;overflow:hidden;transition:transform .12s,box-shadow .12s}
+  .card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(20,35,64,.12)}
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+  .card.c-ok::before{background:var(--ok)} .card.c-warn::before{background:var(--check)}
+  .card.c-cost::before{background:#7c5cd0} .card.c-na::before{background:var(--muted)}
+  .card .k-label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+  .card .k-value{font-size:25px;font-weight:750;margin-top:8px;letter-spacing:-.5px;line-height:1}
+  .card .k-sub{font-size:11px;color:var(--muted);margin-top:6px}
+  .card.c-na .k-value{color:var(--muted);font-size:16px;font-weight:600}
+  .card .k-mini{font-size:11px;font-weight:700;margin-top:5px}
+  /* Tables */
+  .tablewrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden}
+  .tabletools{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 15px;
+    border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .tabletools .ttitle{font-size:13px;font-weight:700}
+  .tabletools .tcount{font-size:11px;color:var(--muted);font-weight:600;margin-left:8px}
+  .tabletools input.search{background:var(--surface-2);border:1px solid var(--border);color:var(--text);
+    padding:7px 11px;border-radius:var(--r-sm);font-size:12.5px;min-width:190px;outline:none}
+  .tabletools input.search:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-weak)}
+  .tscroll{overflow:auto;max-height:600px}
+  table{border-collapse:collapse;width:100%;font-size:12.8px}
+  thead th{position:sticky;top:0;background:var(--surface-3);z-index:2;text-align:left;padding:10px 13px;
+    border-bottom:1px solid var(--border);font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;
+    color:var(--muted);font-weight:700;cursor:pointer;white-space:nowrap;user-select:none}
+  thead th:hover{color:var(--text)}
+  thead th.num,tbody td.num{text-align:right;font-variant-numeric:tabular-nums}
+  tbody td{padding:9px 13px;border-bottom:1px solid var(--border-2);white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:nth-child(even){background:var(--surface-2)}
+  tbody tr:hover{background:var(--accent-weak)}
+  tbody tr.total-row td{font-weight:750;background:var(--surface-3);border-top:2px solid var(--border)}
+  .empty{padding:38px;text-align:center;color:var(--muted);font-size:13px}
+  /* Pills */
+  .pill{display:inline-block;padding:3px 11px;border-radius:20px;font-size:10.5px;font-weight:800;letter-spacing:.4px}
+  .pill.ok{color:var(--ok);background:var(--ok-bg)} .pill.check{color:var(--check);background:var(--check-bg)}
+  .pill.leak{color:var(--leak);background:var(--leak-bg)} .pill.kill{color:var(--kill);background:var(--kill-bg)}
+  .pill.pass{color:var(--pass);background:var(--pass-bg)} .pill.fail{color:var(--fail);background:var(--fail-bg)}
+  .pill.na{color:var(--na);background:var(--na-bg)}
+  .pos{color:var(--pos);font-weight:650} .neg{color:var(--neg);font-weight:650}
+  /* mini bar chart */
+  .bars{display:flex;align-items:flex-end;gap:10px;height:150px;padding:14px 16px;background:var(--surface);
+    border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+  .bar .col{width:70%;max-width:46px;background:linear-gradient(180deg,var(--accent),#6ea0dd);border-radius:5px 5px 0 0;transition:height .3s}
+  .bar .bv{font-size:10.5px;font-weight:700;color:var(--text)}
+  .bar .bl{font-size:10px;color:var(--muted);white-space:nowrap}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:900px){.two-col{grid-template-columns:1fr}}
+  footer.app{padding:16px 24px;color:var(--muted);font-size:11px;text-align:center;border-top:1px solid var(--border);margin-top:26px}
+  /* Responsive */
+  @media(max-width:760px){
+    header.app{padding:0 14px;gap:10px} header.app h1{font-size:14px} header.app .sub{display:none}
+    nav.tabs{top:60px;padding:0 8px} .weekband{padding:7px 14px;font-size:11px}
+    main{padding:14px 12px} .filters{padding:10px 12px} .filters select,.filters input{min-width:120px}
+    .card .k-value{font-size:21px}
+    .hbadge{display:none}
+  }
+</style>
+</head>
+<body>
+<header class="app">
+  <div class="logo">📦</div>
+  <div class="brand">
+    <h1>Postage Reconciliation Dashboard</h1>
+    <span class="sub">Accounts Team · read-only operational view · workbook v3.4 · PostgreSQL</span>
+  </div>
+  <span class="hbadge">Reporting week<br><b id="hb-week">—</b></span>
+  <span class="hbadge">Data as of<br><b id="hb-refresh">—</b></span>
+  <button class="theme-btn" id="themeBtn"><span id="themeIcon">🌙</span><span id="themeTxt">Dark</span></button>
+</header>
+
+<nav class="tabs" id="tabs"></nav>
+<div class="weekband" id="weekband"></div>
+<div class="filters" id="filters"></div>
+<main id="main"></main>
+<footer class="app" id="footer"></footer>
+
+<script>
+/* =====================================================================
+   EMBEDDED DATA — corrected PostgreSQL export, reporting week W27 2026.
+   Actual £ = carrier_charge (real). Expected £ = prior-8-week avg rate ×
+   labels (README "default per carrier" fallback). Counts authoritative.
+   ===================================================================== */
+const dashboardData = {
+  overview:{
+    reporting_week:"W27 2026", week_start:"2026-06-29", week_end:"2026-07-05", as_of:"2026-07-08",
+    week_range:"29 Jun – 05 Jul 2026",
+    total_orders:4020, fba_excluded:389, wayfair:147, self_labelled:3484, labels:3631,
+    actual_cost_gbp:12517.31, expected_cost_gbp:12622.01, variance_gbp:-104.70, variance_pct:-0.0083,
+    avg_cost_per_label:3.62, daily_recon_accuracy:1.0,
+    leakage_gbp:97.46,        // unfavourable variance over threshold (DHL) vs 8-wk baseline
+    open_disputes:2           // auto-flagged rows in the Leakage Register below
+  },
+  carrierSummary:[
+    {carrier:"Royal Mail",labels:2273,expected_gbp:6533.84,actual_gbp:6473.21,avg_rate:2.848,baseline_rate:2.875,variance_gbp:-60.63,variance_pct:-0.0093,status:"CHECK",owner:"TBD — Royal Mail"},
+    {carrier:"DHL",labels:514,expected_gbp:2940.76,actual_gbp:3038.22,avg_rate:5.911,baseline_rate:5.721,variance_gbp:97.46,variance_pct:0.0331,status:"LEAK",owner:"TBD — DHL"},
+    {carrier:"Evri",labels:348,expected_gbp:1636.59,actual_gbp:1587.25,avg_rate:4.696,baseline_rate:4.703,variance_gbp:-49.34,variance_pct:-0.0301,status:"LEAK",owner:"TBD — Evri"},
+    {carrier:"Amazon Shipping",labels:223,expected_gbp:970.05,actual_gbp:970.05,avg_rate:4.350,baseline_rate:4.350,variance_gbp:0.00,variance_pct:0.0000,status:"OK",owner:"TBD — Amazon Shipping"},
+    {carrier:"Wayfair",labels:146,expected_gbp:null,actual_gbp:null,avg_rate:null,baseline_rate:null,variance_gbp:null,variance_pct:null,status:"OK",owner:"TBD — Wayfair"},
+    {carrier:"DPD",labels:78,expected_gbp:315.90,actual_gbp:315.90,avg_rate:4.050,baseline_rate:4.050,variance_gbp:0.00,variance_pct:0.0000,status:"OK",owner:"TBD — DPD"},
+    {carrier:"GLS",labels:25,expected_gbp:113.50,actual_gbp:113.50,avg_rate:4.540,baseline_rate:4.540,variance_gbp:0.00,variance_pct:0.0000,status:"OK",owner:"TBD — GLS"},
+    {carrier:"Others",labels:24,expected_gbp:111.37,actual_gbp:19.18,avg_rate:3.197,baseline_rate:4.640,variance_gbp:-92.19,variance_pct:-0.8278,status:"KILL",owner:"TBD — Others / kill"}
+  ],
+  dailyControl:[
+    {date:"2026-06-29",week_label:"W27 2026",total_orders:610,fba_excluded:43,wayfair:17,self_labelled:550,labels:567,gap:0,actual_gbp:1942.64,avg_rate:3.558,closure:"✓ Closed"},
+    {date:"2026-06-30",week_label:"W27 2026",total_orders:614,fba_excluded:54,wayfair:18,self_labelled:542,labels:560,gap:0,actual_gbp:1917.09,avg_rate:3.570,closure:"✓ Closed"},
+    {date:"2026-07-01",week_label:"W27 2026",total_orders:594,fba_excluded:69,wayfair:18,self_labelled:507,labels:525,gap:0,actual_gbp:1889.99,avg_rate:3.757,closure:"✓ Closed"},
+    {date:"2026-07-02",week_label:"W27 2026",total_orders:545,fba_excluded:58,wayfair:21,self_labelled:466,labels:487,gap:0,actual_gbp:1644.96,avg_rate:3.553,closure:"✓ Closed"},
+    {date:"2026-07-03",week_label:"W27 2026",total_orders:504,fba_excluded:50,wayfair:22,self_labelled:432,labels:454,gap:0,actual_gbp:1567.07,avg_rate:3.670,closure:"✓ Closed"},
+    {date:"2026-07-04",week_label:"W27 2026",total_orders:522,fba_excluded:58,wayfair:21,self_labelled:443,labels:464,gap:0,actual_gbp:1524.37,avg_rate:3.472,closure:"✓ Closed"},
+    {date:"2026-07-05",week_label:"W27 2026",total_orders:631,fba_excluded:57,wayfair:30,self_labelled:544,labels:574,gap:0,actual_gbp:2031.19,avg_rate:3.748,closure:"✓ Closed"}
+  ],
+  kpis:[
+    {row:22,kpi:"Daily reconciliation accuracy",blos_key:"postage.daily_recon_target",target:1.0,actual:1.0,fmt:"pct",status:"PASS",note:"7/7 days order-vs-label gap = 0"},
+    {row:23,kpi:"Weekly leakage £ (vs baseline)",blos_key:"postage.leakage_trigger_gbp",target:0,actual:97.46,fmt:"gbp",status:"FAIL",note:"DHL +£97.46 above 8-week baseline rate"},
+    {row:24,kpi:"Weekly leakage % (vs baseline)",blos_key:"postage.leakage_pct_max",target:0.01,actual:0.0077,fmt:"pct",status:"PASS",note:"unfavourable variance 0.77% of expected (≤1%)"},
+    {row:25,kpi:"Recovery rate",blos_key:"postage.recovery_rate_min",target:0.80,actual:null,fmt:"pct",status:"N/A",note:"no credit-recovered / dispute source"},
+    {row:26,kpi:"Avg dispute age (days)",blos_key:"postage.dispute_age_max_days",target:14,actual:null,fmt:"num",status:"N/A",note:"no dispute table"},
+    {row:27,kpi:"Others share",blos_key:"postage.others_share_max",target:0.02,actual:0.0066,fmt:"pct",status:"PASS",note:"heuristic Others 24/3631 labels = 0.66%"},
+    {row:28,kpi:"Rate card age (days)",blos_key:"postage.rate_card_age_max_days",target:30,actual:null,fmt:"num",status:"N/A",note:"no rate card; expected uses 8-week baseline"},
+    {row:29,kpi:"Service spend %",blos_key:"postage.service_spend_pct_max",target:0.05,actual:null,fmt:"pct",status:"N/A",note:"no label_type in DB"},
+    {row:30,kpi:"Service-to-customer ratio",blos_key:"postage.service_ratio_max",target:0.03,actual:null,fmt:"pct",status:"N/A",note:"no label_type in DB"},
+    {row:31,kpi:"Return rate (returns / customer)",blos_key:"postage.return_rate_max",target:0.02,actual:null,fmt:"pct",status:"N/A",note:"eBay SHIPPING_LABEL only 45 rows, none return-linked"}
+  ],
+  leakageRegister:[
+    {gap_id:"GAP-W27-01",date_raised:"2026-07-06",carrier:"DHL",issue_type:"Rate drift vs baseline",basis:"Actual carrier_charge £3,038.22 vs 8-week expected £2,940.76",expected_gbp:2940.76,actual_gbp:3038.22,leakage_gbp:97.46,variance_pct:0.0331,days_open:2,status:"Open",owner:"TBD — DHL"},
+    {gap_id:"GAP-W27-02",date_raised:"2026-07-06",carrier:"Others",issue_type:"Unmapped carrier (KILL)",basis:"24 labels not classified to a known carrier — reclassify within 24h",expected_gbp:111.37,actual_gbp:19.18,leakage_gbp:0.00,variance_pct:-0.8278,days_open:2,status:"Killed",owner:"TBD — Others / kill"}
+  ],
+  rateCard:[],   // no rate-card table in PostgreSQL; expected uses derived 8-week baseline
+  bookingLog:[
+    {date:"2026-06-29",carrier:"Royal Mail",destination:"United Kingdom",qty:353,actual_gbp:970.88},
+    {date:"2026-06-29",carrier:"DHL",destination:"Germany",qty:70,actual_gbp:306.75},
+    {date:"2026-06-29",carrier:"Amazon Shipping",destination:"United Kingdom",qty:39,actual_gbp:169.65},
+    {date:"2026-06-29",carrier:"Evri",destination:"United Kingdom",qty:20,actual_gbp:47.08},
+    {date:"2026-06-29",carrier:"Wayfair",destination:"United Kingdom",qty:13,actual_gbp:null},
+    {date:"2026-06-29",carrier:"DPD",destination:"United Kingdom",qty:12,actual_gbp:48.60},
+    {date:"2026-06-29",carrier:"Evri",destination:"Ireland",qty:10,actual_gbp:67.65},
+    {date:"2026-06-29",carrier:"DHL",destination:"France",qty:7,actual_gbp:87.57},
+    {date:"2026-06-29",carrier:"Evri",destination:"Italy",qty:7,actual_gbp:35.65},
+    {date:"2026-06-29",carrier:"Evri",destination:"Germany",qty:7,actual_gbp:38.71},
+    {date:"2026-06-29",carrier:"GLS",destination:"Germany",qty:5,actual_gbp:22.70},
+    {date:"2026-06-30",carrier:"Royal Mail",destination:"United Kingdom",qty:357,actual_gbp:1003.36},
+    {date:"2026-06-30",carrier:"DHL",destination:"Germany",qty:53,actual_gbp:232.35},
+    {date:"2026-06-30",carrier:"Amazon Shipping",destination:"United Kingdom",qty:30,actual_gbp:130.50},
+    {date:"2026-06-30",carrier:"Evri",destination:"United Kingdom",qty:24,actual_gbp:55.32},
+    {date:"2026-06-30",carrier:"DPD",destination:"United Kingdom",qty:20,actual_gbp:81.00},
+    {date:"2026-06-30",carrier:"Wayfair",destination:"United Kingdom",qty:18,actual_gbp:null},
+    {date:"2026-06-30",carrier:"Evri",destination:"Italy",qty:10,actual_gbp:65.18},
+    {date:"2026-06-30",carrier:"Evri",destination:"Germany",qty:9,actual_gbp:52.24},
+    {date:"2026-06-30",carrier:"Evri",destination:"France",qty:9,actual_gbp:49.18},
+    {date:"2026-06-30",carrier:"DHL",destination:"Italy",qty:6,actual_gbp:75.06},
+    {date:"2026-06-30",carrier:"DHL",destination:"France",qty:6,actual_gbp:75.06},
+    {date:"2026-06-30",carrier:"GLS",destination:"Germany",qty:5,actual_gbp:22.70},
+    {date:"2026-07-01",carrier:"Royal Mail",destination:"United Kingdom",qty:321,actual_gbp:923.75},
+    {date:"2026-07-01",carrier:"DHL",destination:"Germany",qty:67,actual_gbp:296.40},
+    {date:"2026-07-01",carrier:"Amazon Shipping",destination:"United Kingdom",qty:27,actual_gbp:117.45},
+    {date:"2026-07-01",carrier:"Evri",destination:"United Kingdom",qty:21,actual_gbp:48.49},
+    {date:"2026-07-01",carrier:"Wayfair",destination:"United Kingdom",qty:16,actual_gbp:null},
+    {date:"2026-07-01",carrier:"Evri",destination:"Germany",qty:14,actual_gbp:81.77},
+    {date:"2026-07-01",carrier:"Evri",destination:"Italy",qty:11,actual_gbp:65.18},
+    {date:"2026-07-01",carrier:"Evri",destination:"France",qty:9,actual_gbp:49.77},
+    {date:"2026-07-01",carrier:"DHL",destination:"France",qty:8,actual_gbp:100.08},
+    {date:"2026-07-01",carrier:"Evri",destination:"Ireland",qty:5,actual_gbp:30.12},
+    {date:"2026-07-01",carrier:"GLS",destination:"Germany",qty:5,actual_gbp:22.70},
+    {date:"2026-07-01",carrier:"DHL",destination:"Italy",qty:5,actual_gbp:62.55},
+    {date:"2026-07-02",carrier:"Royal Mail",destination:"United Kingdom",qty:304,actual_gbp:872.05},
+    {date:"2026-07-02",carrier:"DHL",destination:"Germany",qty:49,actual_gbp:208.65},
+    {date:"2026-07-02",carrier:"Amazon Shipping",destination:"United Kingdom",qty:30,actual_gbp:130.50},
+    {date:"2026-07-02",carrier:"Wayfair",destination:"United Kingdom",qty:20,actual_gbp:null},
+    {date:"2026-07-02",carrier:"Evri",destination:"United Kingdom",qty:19,actual_gbp:42.91},
+    {date:"2026-07-02",carrier:"DPD",destination:"United Kingdom",qty:19,actual_gbp:76.95},
+    {date:"2026-07-02",carrier:"Evri",destination:"Germany",qty:13,actual_gbp:74.36},
+    {date:"2026-07-02",carrier:"Evri",destination:"Italy",qty:8,actual_gbp:49.18},
+    {date:"2026-07-02",carrier:"GLS",destination:"Germany",qty:5,actual_gbp:22.70},
+    {date:"2026-07-03",carrier:"Royal Mail",destination:"United Kingdom",qty:286,actual_gbp:796.08},
+    {date:"2026-07-03",carrier:"DHL",destination:"Germany",qty:48,actual_gbp:220.95},
+    {date:"2026-07-03",carrier:"Amazon Shipping",destination:"United Kingdom",qty:23,actual_gbp:100.05},
+    {date:"2026-07-03",carrier:"Wayfair",destination:"United Kingdom",qty:22,actual_gbp:null},
+    {date:"2026-07-03",carrier:"Evri",destination:"United Kingdom",qty:18,actual_gbp:42.94},
+    {date:"2026-07-03",carrier:"Evri",destination:"Germany",qty:11,actual_gbp:70.12},
+    {date:"2026-07-03",carrier:"Evri",destination:"France",qty:9,actual_gbp:57.18},
+    {date:"2026-07-03",carrier:"DPD",destination:"United Kingdom",qty:9,actual_gbp:36.45},
+    {date:"2026-07-04",carrier:"Royal Mail",destination:"United Kingdom",qty:293,actual_gbp:823.12},
+    {date:"2026-07-04",carrier:"DHL",destination:"Germany",qty:58,actual_gbp:250.50},
+    {date:"2026-07-04",carrier:"Amazon Shipping",destination:"United Kingdom",qty:36,actual_gbp:156.60},
+    {date:"2026-07-04",carrier:"Wayfair",destination:"United Kingdom",qty:19,actual_gbp:null},
+    {date:"2026-07-04",carrier:"Evri",destination:"United Kingdom",qty:15,actual_gbp:35.73},
+    {date:"2026-07-04",carrier:"Evri",destination:"Ireland",qty:7,actual_gbp:38.71},
+    {date:"2026-07-04",carrier:"Evri",destination:"Italy",qty:7,actual_gbp:41.18},
+    {date:"2026-07-04",carrier:"Evri",destination:"Germany",qty:6,actual_gbp:35.65},
+    {date:"2026-07-04",carrier:"DPD",destination:"United Kingdom",qty:5,actual_gbp:20.25},
+    {date:"2026-07-05",carrier:"Royal Mail",destination:"United Kingdom",qty:351,actual_gbp:987.97},
+    {date:"2026-07-05",carrier:"DHL",destination:"Germany",qty:72,actual_gbp:309.15},
+    {date:"2026-07-05",carrier:"Amazon Shipping",destination:"United Kingdom",qty:38,actual_gbp:165.30},
+    {date:"2026-07-05",carrier:"Wayfair",destination:"United Kingdom",qty:29,actual_gbp:null},
+    {date:"2026-07-05",carrier:"Evri",destination:"United Kingdom",qty:15,actual_gbp:34.81},
+    {date:"2026-07-05",carrier:"Evri",destination:"Germany",qty:13,actual_gbp:79.30},
+    {date:"2026-07-05",carrier:"DHL",destination:"France",qty:12,actual_gbp:150.12},
+    {date:"2026-07-05",carrier:"DPD",destination:"United Kingdom",qty:10,actual_gbp:40.50},
+    {date:"2026-07-05",carrier:"DHL",destination:"Italy",qty:7,actual_gbp:87.57},
+    {date:"2026-07-05",carrier:"Evri",destination:"France",qty:6,actual_gbp:35.06},
+    {date:"2026-07-05",carrier:"GLS",destination:"Germany",qty:5,actual_gbp:22.70}
+  ],
+  weeklyTrend:[
+    {iso_week:"W22",orders:3691},{iso_week:"W23",orders:4425},{iso_week:"W24",orders:4249},
+    {iso_week:"W25",orders:3681},{iso_week:"W26",orders:3513},{iso_week:"W27",orders:4020}
+  ],
+  serviceProxies:[{proxy:"MANUAL OM",orders:51},{proxy:"REPLACEMENT",orders:7},{proxy:"RESEND",orders:2}],
+  lookups:{
+    carriers:["Royal Mail","DHL","Evri","Amazon Shipping","USPS","DPD","GLS","Smart Track","Wayfair","Others"],
+    statuses:["Open","Investigating","Chase carrier","Credit expected","Recovered","Closed","Killed"],
+    issueTypes:["Relabelling","Surcharge applied","Volumetric reweigh","Wrong zone billed","Format reclass","Rate drift vs baseline","Unmapped carrier (KILL)","Missing invoice","Duplicate billing"]
+  },
+  blos:{
+    "postage.leakage_pct_max":0.01,"postage.leakage_trigger_gbp":5.00,"postage.others_share_max":0.02,
+    "postage.invoice_coverage_target":1.00,"postage.recovery_rate_min":0.80,"postage.dispute_age_max_days":14,
+    "postage.rate_card_age_max_days":30,"postage.daily_recon_target":1.00,"postage.cost_variance_max":0.03,
+    "postage.dispute_l1_days":7,"postage.dispute_l2_days":14,"postage.service_spend_pct_max":0.05,
+    "postage.service_ratio_max":0.03,"postage.replacement_per_order_max":2,"postage.return_rate_max":0.02
+  },
+  metadata:{
+    source:"PostgreSQL via Claude MCP (read-only)", as_of:"2026-07-08",
+    tables:["public.order_transaction","public.order_shipping_billing_detail"],
+    financial_basis:"Actual £ = carrier_charge (reliable). Expected £ = prior-8-week (W19–W26) avg carrier_charge per carrier × labels (README 'default per carrier' fallback). shipping_template_price is 67% zero and is NOT used.",
+    carrier_mapping:"heuristic classification of free-text carrier_name",
+    gaps:["label_type (service/return split)","service_tier","weight_band","destination_zone","rate card (expected uses 8-week baseline)","invoice ingestion","dispute/recovery tables","BLOS API"]
+  }
+};
+
+/* =====================================================================
+   APP — vanilla JS. No frameworks. Tabs, filters, sort, search, theme.
+   ===================================================================== */
+const TABS=[{id:"dashboard",label:"Dashboard"},{id:"daily",label:"Daily Control"},{id:"weekly",label:"Weekly Invoice Check"},
+  {id:"leakage",label:"Leakage Register"},{id:"booking",label:"Booking Log"},{id:"ratecard",label:"Rate Card"},{id:"reference",label:"Reference"}];
+const state={tab:"dashboard",theme:localStorage.getItem("prd_theme")||"light",
+  filters:{carrier:"",destination:"",week:""},sort:{},search:{}};
+
+const gbp=v=>(v===null||v===undefined)?'<span class="muted">—</span>':'£'+Number(v).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});
+const gbp0=v=>(v===null||v===undefined)?'—':'£'+Number(v).toLocaleString('en-GB',{maximumFractionDigits:0});
+const pct=v=>(v===null||v===undefined)?'<span class="muted">—</span>':(Number(v)*100).toFixed(2)+'%';
+const num=v=>(v===null||v===undefined)?'<span class="muted">—</span>':Number(v).toLocaleString('en-GB');
+const rate=v=>(v===null||v===undefined)?'<span class="muted">—</span>':'£'+Number(v).toFixed(2);
+const sGbp=v=>{if(v===null||v===undefined)return '<span class="muted">—</span>';const c=v>0?'pos':(v<0?'neg':'');return '<span class="'+c+'">'+(v>0?'+':'')+'£'+Number(v).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span>';};
+const sPct=v=>{if(v===null||v===undefined)return '<span class="muted">—</span>';const c=v>0?'pos':(v<0?'neg':'');return '<span class="'+c+'">'+(v>0?'+':'')+(Number(v)*100).toFixed(2)+'%</span>';};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtDate=d=>{const[y,m,dd]=d.split('-');return dd+' '+["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+m-1]+' '+y;};
+const statusPill=s=>'<span class="pill '+({OK:'ok',CHECK:'check',LEAK:'leak',KILL:'kill'}[s]||'na')+'">'+esc(s)+'</span>';
+const kpiPill=s=>'<span class="pill '+({PASS:'pass',FAIL:'fail'}[s]||'na')+'">'+esc(s)+'</span>';
+
+function renderTable(o){
+  const k=o.key,s=state.sort[k],term=(state.search[k]||"").toLowerCase();
+  let rows=o.rows.slice();
+  if(term)rows=rows.filter(r=>o.columns.some(c=>String(r[c.k]??"").toLowerCase().includes(term)));
+  if(s)rows.sort((a,b)=>{let x=a[s.key],y=b[s.key];if(x===null||x===undefined)x=-Infinity;if(y===null||y===undefined)y=-Infinity;
+    return (typeof x==='number'&&typeof y==='number')?(x-y)*s.dir:String(x).localeCompare(String(y))*s.dir;});
+  const head=o.columns.map(c=>{const a=s&&s.key===c.k?(s.dir>0?' ▲':' ▼'):'';return '<th class="'+(c.cls||'')+'" data-sk="'+k+'" data-col="'+c.k+'">'+esc(c.label)+a+'</th>';}).join('');
+  let body;
+  if(!rows.length)body='<tr><td class="empty" colspan="'+o.columns.length+'">'+(o.emptyMsg||'No rows match the current filters.')+'</td></tr>';
+  else{
+    body=rows.map(r=>'<tr>'+o.columns.map(c=>'<td class="'+(c.cls||'')+'">'+(c.html?c.html(r):(c.fmt?c.fmt(r[c.k]):esc(r[c.k]??'')))+'</td>').join('')+'</tr>').join('');
+    if(o.totalRow)body+='<tr class="total-row">'+o.columns.map(c=>'<td class="'+(c.cls||'')+'">'+(o.totalRow[c.k]!==undefined?o.totalRow[c.k]:'')+'</td>').join('')+'</tr>';
+  }
+  const sb=o.search===false?'':'<input class="search" placeholder="Search…" data-sf="'+k+'" value="'+esc(state.search[k]||'')+'">';
+  return '<div class="tablewrap"><div class="tabletools"><span class="ttitle">'+esc(o.title)+'<span class="tcount">'+rows.length+' rows</span></span>'+sb+'</div><div class="tscroll"><table><thead><tr>'+head+'</tr></thead><tbody>'+body+'</tbody></table></div></div>';
+}
+function applyFilters(rows){const f=state.filters;return rows.filter(r=>{
+  if(f.carrier&&r.carrier!==f.carrier)return false;
+  if(f.destination&&r.destination!==undefined&&r.destination!==f.destination)return false;
+  if(f.week&&r.week_label!==undefined&&r.week_label!==f.week)return false;return true;});}
+
+function card(label,value,sub,cls,mini){return '<div class="card '+(cls||'')+'"><div class="k-label">'+esc(label)+'</div><div class="k-value">'+value+'</div>'+(mini?'<div class="k-mini">'+mini+'</div>':'')+(sub?'<div class="k-sub">'+esc(sub)+'</div>':'')+'</div>';}
+
+function pageDashboard(){
+  const o=dashboardData.overview;
+  const cards=[
+    card("Actual Postage Cost",gbp(o.actual_cost_gbp),"carrier_charge · week","c-cost"),
+    card("Expected (baseline)",gbp(o.expected_cost_gbp),"8-week avg rate × labels","c-cost"),
+    card("Cost Variance",sGbp(o.variance_gbp),"vs 8-week baseline",o.variance_gbp<=0?"c-ok":"c-warn",sPct(o.variance_pct)),
+    card("Avg £ / Label",rate(o.avg_cost_per_label),"across "+num(o.labels)+" labels","c-cost"),
+    card("Bookings (labels)",num(o.labels),"shipments this week",""),
+    card("Total Orders",num(o.total_orders),"completed orders",""),
+    card("Self-Labelled",num(o.self_labelled),"excl. FBA ("+o.fba_excluded+") & Wayfair ("+o.wayfair+")",""),
+    card("Daily Recon Accuracy",pct(o.daily_recon_accuracy),"7/7 days · gap = 0","c-ok")
+  ].join('');
+  const cs=applyFilters(dashboardData.carrierSummary);
+  const t=sum=>cs.reduce((a,r)=>a+(r[sum]||0),0);
+  const totalRow={carrier:'<b>TOTAL</b>',labels:num(t('labels')),expected_gbp:gbp(t('expected_gbp')),actual_gbp:gbp(t('actual_gbp')),
+    variance_gbp:sGbp(t('actual_gbp')-t('expected_gbp')),variance_pct:'',status:'',owner:''};
+  const csTable=renderTable({key:"carrierSummary",title:"Weekly Carrier Summary — "+o.reporting_week,rows:cs,totalRow,
+    columns:[{k:"carrier",label:"Carrier"},{k:"labels",label:"Labels",cls:"num",fmt:num},
+      {k:"expected_gbp",label:"Expected £",cls:"num",fmt:gbp},{k:"actual_gbp",label:"Actual £",cls:"num",fmt:gbp},
+      {k:"variance_gbp",label:"Variance £",cls:"num",html:r=>sGbp(r.variance_gbp)},{k:"variance_pct",label:"Var %",cls:"num",html:r=>sPct(r.variance_pct)},
+      {k:"status",label:"Status",html:r=>statusPill(r.status)},{k:"owner",label:"Owner",html:r=>'<span class="muted">'+esc(r.owner)+'</span>'}]});
+  const kpiTable=renderTable({key:"kpis",title:"Mandatory KPIs · targets from BLOS",search:false,rows:dashboardData.kpis,
+    columns:[{k:"kpi",label:"KPI"},
+      {k:"target",label:"Target",cls:"num",html:r=>r.fmt==='pct'?pct(r.target):(r.fmt==='gbp'?gbp(r.target):num(r.target))},
+      {k:"actual",label:"Actual",cls:"num",html:r=>r.actual===null?'<span class="muted">—</span>':(r.fmt==='pct'?pct(r.actual):(r.fmt==='gbp'?gbp(r.actual):num(r.actual)))},
+      {k:"blos_key",label:"BLOS Key",html:r=>'<span class="muted">'+esc(r.blos_key)+'</span>'},
+      {k:"status",label:"Status",html:r=>kpiPill(r.status)},{k:"note",label:"Note",html:r=>'<span class="muted">'+esc(r.note)+'</span>'}]});
+  // mini daily cost bar chart
+  const dmax=Math.max(...dashboardData.dailyControl.map(d=>d.actual_gbp));
+  const bars='<div class="bars">'+dashboardData.dailyControl.map(d=>{
+    const h=Math.round(d.actual_gbp/dmax*100);
+    return '<div class="bar"><div class="bv">'+gbp0(d.actual_gbp)+'</div><div class="col" style="height:'+h+'%"></div><div class="bl">'+d.date.slice(5)+'</div></div>';}).join('')+'</div>';
+  return '<div class="note"><b>Corrected data model.</b> <b>Actual £</b> is the real carrier charge (<code>carrier_charge</code>). '
+    +'<b>Expected £</b> is the prior-8-week average rate per carrier × this week\'s labels (the workbook\'s documented "default per carrier" fallback, since no rate-card table exists). '
+    +'Variance flags carriers charging above/below their recent norm. Counts are authoritative.</div>'
+    +'<div class="cards">'+cards+'</div>'
+    +'<h2 class="sec">Daily Postage Cost · '+esc(o.week_range)+'</h2>'+bars
+    +'<h2 class="sec">Weekly Carrier Summary</h2>'+csTable
+    +'<h2 class="sec">Mandatory KPIs</h2>'+kpiTable;
+}
+function pageDaily(){
+  const rows=applyFilters(dashboardData.dailyControl);
+  const s=k=>rows.reduce((a,r)=>a+(r[k]||0),0);
+  const totalRow={date:'<b>WEEKLY TOTAL</b>',total_orders:num(s('total_orders')),fba_excluded:num(s('fba_excluded')),
+    wayfair:num(s('wayfair')),self_labelled:num(s('self_labelled')),labels:num(s('labels')),gap:num(s('gap')),actual_gbp:gbp(s('actual_gbp')),avg_rate:'',closure:''};
+  const t=renderTable({key:"dailyControl",title:"Daily Control — orders → labels → cost",rows,totalRow,
+    columns:[{k:"date",label:"Date",html:r=>fmtDate(r.date)},{k:"total_orders",label:"Total Orders",cls:"num",fmt:num},
+      {k:"fba_excluded",label:"FBA Excl.",cls:"num",fmt:num},{k:"wayfair",label:"Wayfair",cls:"num",fmt:num},
+      {k:"self_labelled",label:"Self-Labelled",cls:"num",fmt:num},{k:"labels",label:"Labels in BL",cls:"num",fmt:num},
+      {k:"gap",label:"Gap",cls:"num",fmt:num},{k:"actual_gbp",label:"Actual Cost £",cls:"num",fmt:gbp},
+      {k:"avg_rate",label:"Avg £/Label",cls:"num",fmt:rate},{k:"closure",label:"Closure",html:r=>'<span class="pill ok">'+esc(r.closure)+'</span>'}]});
+  return '<div class="note">Workbook rule: <b>Total Orders = FBA + Wayfair + Self-Labelled</b>; <b>Gap = (Self-Labelled + Wayfair) − Labels</b>. All 7 days reconcile (Gap = 0). '
+    +'£ column is real actual postage cost (<code>carrier_charge</code>). Service-side columns need <code>label_type</code> (not in DB).</div>'+t;
+}
+function pageWeekly(){
+  const rows=applyFilters(dashboardData.carrierSummary).map(r=>({...r,week_label:"W27 2026"}));
+  const t=renderTable({key:"weekly",title:"Weekly Invoice Check — "+dashboardData.overview.reporting_week,rows,
+    columns:[{k:"carrier",label:"Carrier"},{k:"labels",label:"Labels",cls:"num",fmt:num},
+      {k:"baseline_rate",label:"Baseline £/lbl",cls:"num",fmt:rate},{k:"avg_rate",label:"Actual £/lbl",cls:"num",fmt:rate},
+      {k:"expected_gbp",label:"Expected £",cls:"num",fmt:gbp},{k:"actual_gbp",label:"Actual £",cls:"num",fmt:gbp},
+      {k:"variance_gbp",label:"Variance £",cls:"num",html:r=>sGbp(r.variance_gbp)},{k:"variance_pct",label:"Var %",cls:"num",html:r=>sPct(r.variance_pct)},
+      {k:"status",label:"Status",html:r=>statusPill(r.status)}]});
+  return '<div class="note"><b>Actual £/lbl</b> = this week\'s avg carrier charge; <b>Baseline £/lbl</b> = prior-8-week avg. '
+    +'Status uses the workbook rule (trigger £5, leakage 1%; Others → KILL). DHL is charging +3.3% above its baseline → LEAK.</div>'+t;
+}
+function pageLeakage(){
+  const rows=dashboardData.leakageRegister;
+  const t=renderTable({key:"leakage",title:"Leakage Register — auto-flagged (derived baseline)",search:false,rows,
+    emptyMsg:'No flagged rows.',
+    columns:[{k:"gap_id",label:"Gap ID"},{k:"date_raised",label:"Raised",html:r=>fmtDate(r.date_raised)},{k:"carrier",label:"Carrier"},
+      {k:"issue_type",label:"Issue Type"},{k:"expected_gbp",label:"Expected £",cls:"num",fmt:gbp},{k:"actual_gbp",label:"Actual £",cls:"num",fmt:gbp},
+      {k:"leakage_gbp",label:"£ Leakage",cls:"num",fmt:gbp},{k:"days_open",label:"Days Open",cls:"num",fmt:num},
+      {k:"status",label:"Status",html:r=>'<span class="pill '+(r.status==='Killed'?'kill':'check')+'">'+esc(r.status)+'</span>'},
+      {k:"owner",label:"Owner",html:r=>'<span class="muted">'+esc(r.owner)+'</span>'}]});
+  const detail=rows.map(r=>'<div class="note" style="border-left-color:var(--check)"><b>'+esc(r.gap_id)+' · '+esc(r.carrier)+'</b> — '+esc(r.basis)+'</div>').join('');
+  return '<div class="note">Rows are <b>auto-flagged from the cost-variance check</b> (Actual vs 8-week baseline): carriers over the BLOS threshold, plus Others (KILL). '
+    +'True dispute/recovery tracking (recovery £, credit dates) needs a dispute table — not in the DB yet.</div>'+t+'<h2 class="sec">Flag detail</h2>'+detail;
+}
+function pageBooking(){
+  let rows=applyFilters(dashboardData.bookingLog).map(r=>({...r,avg:r.actual_gbp&&r.qty?r.actual_gbp/r.qty:null}));
+  const t=renderTable({key:"booking",title:"Booking Log — buckets (date × carrier × destination)",rows,
+    columns:[{k:"date",label:"Date",html:r=>fmtDate(r.date)},{k:"carrier",label:"Carrier"},{k:"destination",label:"Destination"},
+      {k:"qty",label:"Qty Labels",cls:"num",fmt:num},{k:"actual_gbp",label:"Actual £",cls:"num",fmt:gbp},{k:"avg",label:"Avg £/Label",cls:"num",fmt:rate}]});
+  return '<div class="note">Workbook grain is Carrier × Service × Weight × Destination × Label Type. Service, Weight and Label Type are <b>not in PostgreSQL</b>, so buckets use the available dimensions (date × carrier × destination, ≥5 labels). £ = real <code>carrier_charge</code>.</div>'+t;
+}
+function pageRateCard(){
+  return '<div class="note">There is <b>no rate-card table in PostgreSQL</b>. The dashboard\'s "Expected £" is therefore derived from a <b>prior-8-week baseline rate per carrier</b> (the workbook\'s documented fallback), shown below, rather than a Carrier×Service×Weight×Destination rate lookup.</div>'
+    +renderTable({key:"ratecardBaseline",title:"Derived baseline rate per carrier (proxy for rate card)",search:false,
+      rows:dashboardData.carrierSummary.filter(r=>r.baseline_rate!==null),
+      columns:[{k:"carrier",label:"Carrier"},{k:"baseline_rate",label:"Baseline £/Label (prior 8 wks)",cls:"num",fmt:rate},
+        {k:"avg_rate",label:"This week £/Label",cls:"num",fmt:rate},{k:"labels",label:"Labels (W27)",cls:"num",fmt:num}]});
+}
+function pageReference(){
+  const md=dashboardData.metadata;
+  const blos=Object.entries(dashboardData.blos).map(([k,v])=>({key:k,val:(k.includes('gbp')?'£'+Number(v).toFixed(2):(k.includes('days')?v+' days':(v<=1?(v*100).toFixed(2)+'%':v)))}));
+  const blosT=renderTable({key:"blos",title:"BLOS Thresholds (from workbook — blos schema empty)",search:false,rows:blos,
+    columns:[{k:"key",label:"BLOS Key"},{k:"val",label:"Current Value",cls:"num"}]});
+  const trend=renderTable({key:"trend",title:"Order volume — last 6 ISO weeks",search:false,rows:dashboardData.weeklyTrend,
+    columns:[{k:"iso_week",label:"ISO Week"},{k:"orders",label:"Orders",cls:"num",fmt:num}]});
+  const svc=renderTable({key:"svc",title:"Service-label proxies (source_name — not label_type)",search:false,rows:dashboardData.serviceProxies,
+    columns:[{k:"proxy",label:"Source proxy"},{k:"orders",label:"Orders",cls:"num",fmt:num}]});
+  const gaps=md.gaps.map(x=>'<li>'+esc(x)+'</li>').join('');
+  return '<div class="note">Provenance and known data gaps — so no figure is mistaken for something it is not.</div>'
+    +'<div class="tablewrap"><div class="tscroll"><table><tbody>'
+    +'<tr><td style="width:190px"><b>Source</b></td><td>'+esc(md.source)+'</td></tr>'
+    +'<tr><td><b>Tables</b></td><td>'+esc(md.tables.join(', '))+'</td></tr>'
+    +'<tr><td><b>As of</b></td><td>'+esc(md.as_of)+'</td></tr>'
+    +'<tr><td><b>Financial basis</b></td><td>'+esc(md.financial_basis)+'</td></tr>'
+    +'<tr><td><b>Carrier mapping</b></td><td>'+esc(md.carrier_mapping)+'</td></tr>'
+    +'</tbody></table></div></div>'
+    +'<h2 class="sec">Known data gaps</h2><div class="note"><ul style="margin:4px 0 0 18px;padding:0">'+gaps+'</ul></div>'
+    +'<div class="two-col"><div>'+blosT+'</div><div>'+trend+svc+'</div></div>';
+}
+const PAGES={dashboard:pageDashboard,daily:pageDaily,weekly:pageWeekly,leakage:pageLeakage,booking:pageBooking,ratecard:pageRateCard,reference:pageReference};
+
+function buildFilters(){
+  const carriers=[...new Set(dashboardData.carrierSummary.map(r=>r.carrier))];
+  const dests=[...new Set(dashboardData.bookingLog.map(r=>r.destination))].sort();
+  const weeks=["W27 2026"];
+  const sel=(id,label,opts,val)=>'<div class="fld"><label>'+label+'</label><select data-filter="'+id+'"><option value="">All</option>'+opts.map(o=>'<option'+(o===val?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select></div>';
+  let h='';
+  if(["dashboard","weekly","booking"].includes(state.tab))h+=sel('carrier','Carrier',carriers,state.filters.carrier);
+  if(state.tab==="booking")h+=sel('destination','Destination',dests,state.filters.destination);
+  h+=sel('week','Week',weeks,state.filters.week);
+  h+='<button class="clear" id="clearFilters">Clear filters</button>';
+  document.getElementById('filters').innerHTML=h;
+}
+function render(){
+  document.getElementById('main').innerHTML='<div class="page active">'+PAGES[state.tab]()+'</div>';
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===state.tab));
+  buildFilters();
+}
+function initTabs(){
+  const n=document.getElementById('tabs');
+  n.innerHTML=TABS.map(t=>'<button data-tab="'+t.id+'"'+(t.id===state.tab?' class="active"':'')+'>'+t.label+'</button>').join('');
+  n.addEventListener('click',e=>{const b=e.target.closest('button');if(b){state.tab=b.dataset.tab;render();}});
+}
+document.addEventListener('click',e=>{
+  const th=e.target.closest('th[data-col]');
+  if(th){const k=th.dataset.sk,c=th.dataset.col,cur=state.sort[k];state.sort[k]=(cur&&cur.key===c)?{key:c,dir:cur.dir*-1}:{key:c,dir:1};render();return;}
+  if(e.target.id==='clearFilters'){state.filters={carrier:"",destination:"",week:""};render();}
+});
+document.addEventListener('change',e=>{const f=e.target.dataset.filter;if(f){state.filters[f]=e.target.value;render();}});
+document.addEventListener('input',e=>{const sf=e.target.dataset.sf;if(sf){state.search[sf]=e.target.value;const p=e.target.selectionStart;render();
+  const nb=document.querySelector('input[data-sf="'+sf+'"]');if(nb){nb.focus();try{nb.setSelectionRange(p,p);}catch(_){}}}});
+function applyTheme(){document.documentElement.setAttribute('data-theme',state.theme);
+  document.getElementById('themeIcon').textContent=state.theme==='dark'?'☀️':'🌙';
+  document.getElementById('themeTxt').textContent=state.theme==='dark'?'Light':'Dark';}
+document.getElementById('themeBtn').addEventListener('click',()=>{state.theme=state.theme==='dark'?'light':'dark';localStorage.setItem('prd_theme',state.theme);applyTheme();});
+
+const o=dashboardData.overview;
+document.getElementById('hb-week').textContent=o.reporting_week;
+document.getElementById('hb-refresh').textContent=o.as_of;
+document.getElementById('weekband').innerHTML='<span class="dot"></span> REPORTING WEEK: '+esc(o.reporting_week)+' <span class="light">· '+esc(o.week_range)+' · use this label in disputes / EOD / chase emails</span>';
+document.getElementById('footer').innerHTML='Postage Reconciliation System · data as of <b>'+o.as_of+'</b> · source: '+esc(dashboardData.metadata.source)+' · read-only · business logic preserved from workbook v3.4 · counts authoritative, £ from carrier_charge.';
+applyTheme();initTabs();render();
+</script>
+</body>
+</html>
