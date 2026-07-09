@@ -16,14 +16,17 @@
 -- SOURCE TABLES (confirmed via MCP introspection):
 --   public.order_transaction              (order-item grain; 1.23M rows; order_date to 2026-07-08)
 --   public.order_shipping_billing_detail  (1 row ~ 1 shipment/order; NO date col -> join on order_id)
---   public.ebay_order_expenses            (marketplace fees; SHIPPING_LABEL only 45 rows)
+--   public.ebay_order_expenses            (marketplace fees; SHIPPING_LABEL only 45 rows all-time)
+--   public.amazon_returns / public.ebay_returns / public.shopify_returns  (Return Label In — see Q10)
 --
 -- KNOWN MISSING (report, do NOT fabricate) — see Missing Columns Report:
 --   service_tier, weight_band_kg, destination_zone, label_type  -> NOT in schema
---   rate card table                                             -> NOT in schema (no Forecast-via-ratecard)
+--   rate card  -> blos.postage + blos.postage_history EXIST but have 0 ROWS (see Q11)
+--                 => backfill/ETL gap, NOT a schema gap. Forecast-via-ratecard still impossible.
 --   invoice ingestion fields (invoice_received_amount/date/id)  -> NOT in schema
 --   leakage / dispute / recovery tables                         -> NOT in public schema
---   blos schema                                                 -> EMPTY (thresholds come from workbook)
+--   blos schema -> NOT empty: contains postage/postage_history tables (0 rows).
+--                 Threshold VALUES still come from the workbook (BLOS API not live).
 --
 -- DB FINANCIAL COLUMNS USED (named by true meaning, not workbook name):
 --   shipping_template_price  -> forecast_gbp  (DB "expected" price; 0% null)   [Forecast-equivalent]
@@ -297,3 +300,107 @@ SELECT dt,
        self_labelled, wayfair, shipments,
        (self_labelled + wayfair) - shipments AS order_vs_label_gap
 FROM per_day ORDER BY dt;
+
+
+-- =============================================================================
+-- Q9 · CORRECTED CARRIER RECONCILIATION  (supersedes the template-price basis)
+-- -----------------------------------------------------------------------------
+-- WHY: shipping_template_price is 67% zero for the reporting week, so summing it
+-- as "Forecast £" made every carrier look like a large LEAK (data mis-fetch).
+-- FIX: use carrier_charge as the reliable ACTUAL postage cost, and derive an
+-- EXPECTED baseline = prior-8-week (W19-W26, 2026-05-04..2026-06-28) average
+-- carrier_charge per carrier_family × current-week labels — the README Section-15
+-- "Forecast £ will fall back to a default per carrier" rule. Variance = Actual -
+-- Expected then flags carriers charging above/below their recent norm.
+-- Read-only. This query produced the corrected carrierSummary in the dashboard.
+-- =============================================================================
+WITH cls AS (
+  SELECT s.order_id, s.carrier_charge,
+    CASE
+      WHEN carrier_name ILIKE '%smart track%' THEN 'Smart Track'
+      WHEN carrier_name ILIKE '%wayfair%' THEN 'Wayfair'
+      WHEN carrier_name ILIKE '%evri%' OR carrier_name ILIKE '%hermes%' THEN 'Evri'
+      WHEN carrier_name ILIKE '%dhl%' THEN 'DHL'
+      WHEN carrier_name ILIKE '%gls%' THEN 'GLS'
+      WHEN carrier_name ILIKE '%dpd%' THEN 'DPD'
+      WHEN carrier_name ILIKE '%usps%' THEN 'USPS'
+      WHEN carrier_name ILIKE '%amazon%' THEN 'Amazon Shipping'
+      WHEN carrier_name ILIKE '%royal mail%' OR carrier_name ILIKE '%royalmail%'
+           OR carrier_name ILIKE 'rm %' OR carrier_name ILIKE '%crl48%' OR carrier_name ILIKE 'tracked 48 rm%' THEN 'Royal Mail'
+      ELSE 'Others' END AS carrier_family
+  FROM public.order_shipping_billing_detail s
+),
+base_orders AS (  -- prior 8 complete weeks (W19-W26)
+  SELECT DISTINCT order_id FROM public.order_transaction
+  WHERE order_status='Completed' AND order_date::date BETWEEN DATE '2026-05-04' AND DATE '2026-06-28'
+),
+wk_orders AS (    -- reporting week W27
+  SELECT DISTINCT order_id FROM public.order_transaction
+  WHERE order_status='Completed' AND order_date::date BETWEEN DATE '2026-06-29' AND DATE '2026-07-05'
+),
+baseline AS (
+  SELECT carrier_family,
+         SUM(carrier_charge) FILTER (WHERE carrier_charge IS NOT NULL)
+           / NULLIF(COUNT(*) FILTER (WHERE carrier_charge IS NOT NULL),0) AS base_rate
+  FROM cls WHERE order_id IN (SELECT order_id FROM base_orders) GROUP BY carrier_family
+),
+wk AS (
+  SELECT carrier_family, COUNT(*) AS labels,
+         ROUND(SUM(carrier_charge)::numeric,2) AS actual_gbp,
+         ROUND(AVG(carrier_charge)::numeric,3) AS avg_rate
+  FROM cls WHERE order_id IN (SELECT order_id FROM wk_orders) GROUP BY carrier_family
+)
+SELECT w.carrier_family, w.labels, w.avg_rate,
+       ROUND(b.base_rate::numeric,3)          AS baseline_rate,
+       ROUND((b.base_rate*w.labels)::numeric,2) AS expected_gbp,
+       w.actual_gbp,
+       ROUND((w.actual_gbp - b.base_rate*w.labels)::numeric,2) AS variance_gbp,
+       ROUND(CASE WHEN b.base_rate*w.labels=0 THEN 0
+             ELSE (w.actual_gbp - b.base_rate*w.labels)/(b.base_rate*w.labels) END::numeric,4) AS variance_pct
+FROM wk w LEFT JOIN baseline b USING (carrier_family)
+ORDER BY w.labels DESC;
+
+-- =============================================================================
+-- Q10 · RETURN LABEL IN (README Section 21) — read-only, VERIFIED
+-- -----------------------------------------------------------------------------
+-- README Section 21 maps `ebay_order_expenses.transaction_memo` and
+-- `amz_refund_expenses`. NEITHER EXISTS. The real sources are:
+--   public.amazon_returns  (label_type, label_cost, rd_carrier, fulfilment, request_date)
+--   public.ebay_returns    (return_id, carrier, tracking_no, request_date)
+--   public.shopify_returns (refund_amount only -> NO label -> excluded)
+-- FBA returns are OUT OF SCOPE (README Section 1). AmazonUnPaidLabel = customer-paid.
+-- =============================================================================
+SELECT 'Amazon FBM prepaid' AS source, 'public.amazon_returns' AS tbl,
+       count(*) AS labels, round(sum(label_cost)::numeric,2) AS label_cost,
+       string_agg(DISTINCT currency,'/') AS ccy
+FROM public.amazon_returns
+WHERE request_date BETWEEN DATE '2026-06-29' AND DATE '2026-07-05'
+  AND fulfilment='fbm' AND label_type='AmazonPrePaidLabel'
+UNION ALL
+SELECT 'eBay return w/ carrier (label evidence)', 'public.ebay_returns',
+       count(DISTINCT return_id) FILTER (WHERE carrier IS NOT NULL AND btrim(carrier)<>''),
+       NULL, '—'
+FROM public.ebay_returns
+WHERE request_date::date BETWEEN DATE '2026-06-29' AND DATE '2026-07-05'
+UNION ALL
+SELECT 'eBay billed SHIPPING_LABEL fee', 'public.ebay_order_expenses',
+       count(*), round(sum(COALESCE(transaction_amount,0))::numeric,2), 'GBP'
+FROM public.ebay_order_expenses
+WHERE transaction_type='SHIPPING_LABEL'
+  AND transaction_date BETWEEN DATE '2026-06-29' AND DATE '2026-07-05';
+-- Result (W27 2026): Amazon 110 · eBay label-evidenced 39 · eBay billed fee 1
+-- Return Label In = 149 -> 149/3631 customer-order labels = 4.10% (KPI 31 FAIL vs 2%).
+
+
+-- =============================================================================
+-- Q11 · RATE-CARD PROBE — proves the table exists but is EMPTY
+-- -----------------------------------------------------------------------------
+-- Corrects the earlier claim "no rate-card table / blos schema is empty".
+-- blos.postage has the right shape (postage_type, destination_zone, weight_from,
+-- weight_to, weight_unit, postage_value) but 0 rows -> Forecast £ = Qty x Rate x
+-- (1+VAT%) is NOT computable. This is a BACKFILL/ETL gap, not a schema gap.
+-- =============================================================================
+SELECT 'blos.postage' AS tbl, count(*) AS rows FROM blos.postage
+UNION ALL
+SELECT 'blos.postage_history', count(*) FROM blos.postage_history;
+-- Result: 0 rows in both.

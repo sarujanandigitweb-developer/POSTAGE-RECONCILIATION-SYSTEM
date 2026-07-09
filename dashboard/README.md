@@ -53,9 +53,14 @@ and sort state. A generic table renderer handles sorting, search and pills for e
 ## 6. Embedded data
 - `const dashboardData = { overview, carrierSummary, dailyControl, weeklyInvoice, kpis, bookingLog,
   leakageRegister, rateCard, weeklyTrend, serviceProxies, lookups, blos, metadata }`.
-- Sourced from PostgreSQL (Phase 2), reporting week **W27 2026** (29 Jun–05 Jul 2026), as-of 2026-07-08.
-- **Counts authoritative; £ indicative** (DB proxies, mixed GBP+EUR); carrier grouping heuristic.
-- `leakageRegister` and `rateCard` are **empty** — no PostgreSQL source; shown as "no source", not faked.
+- Sourced from PostgreSQL, reporting week **W27 2026** (29 Jun–05 Jul 2026), as-of 2026-07-08.
+- **Counts authoritative.** Corrected financial model: **Actual £ = `carrier_charge`** (real cost);
+  **Expected £ = prior-8-week avg rate per carrier × labels** (the README "default per carrier"
+  fallback — `shipping_template_price` is 67% zero and is NOT used); Variance/Status by workbook rule.
+- `leakageRegister` = 2 auto-flagged rows (DHL LEAK, Others KILL) from the cost-variance check;
+  `rateCard` = **208 rows sourced from workbook Sheet 4** (`blos.postage` exists but holds 0 rows).
+  Forecast £ is still not computable — the Lookup Key needs `service_tier`/`weight_band_kg`/`destination_zone`.
+- `data.js` is byte-identical to this embedded object. Validation: `documentation/13_zero_trust_final_audit.md`.
 
 ## 7. Tabs
 | Tab | Shows |
@@ -63,9 +68,9 @@ and sort state. A generic table renderer handles sorting, search and pills for e
 | Dashboard | KPI cards, Carrier Summary, mandatory KPI table (rows 22–31) |
 | Daily Control | per-day order→label reconciliation + weekly total |
 | Weekly Invoice Check | per-carrier Forecast vs Invoice, variance, status |
-| Leakage Register | disputes (empty — no source) |
+| Leakage Register | auto-flagged disputes (2 rows); Credit Recovered £ has no source |
 | Booking Log | best-effort buckets (date × carrier × destination) |
-| Rate Card | empty — no rate-card table in DB |
+| Rate Card | 208 rows from **workbook Sheet 4** (`blos.postage` exists but has 0 rows) |
 | Reference | provenance, data gaps, BLOS thresholds, trend, service proxies |
 
 ## 8. Filters
@@ -94,8 +99,8 @@ properties; no build step, no polyfills. No IE support.
 ## 13. Future enhancements
 - Optional supporting charts (kept minimal to match the workbook's pill/table style).
 - Live/auto refresh (see [../scripts/README.md](../scripts/README.md)) and a "last updated" poll.
-- Populate Leakage Register, Rate Card and service/return KPIs once their PostgreSQL sources exist
-  (see [../documentation/09_phase2_readiness.md](../documentation/09_phase2_readiness.md)).
+- Backfill `blos.postage` and add `label_type`/`service_tier`/`weight_band_kg`/`destination_zone`
+  to unlock Forecast £, the service side and full closure (see `documentation/13_zero_trust_final_audit.md`).
 - Multi-week selector driven by `weeklyTrend`.
 
 > **Do not hand-edit the embedded data.** Regenerate it from PostgreSQL via the query pack; see

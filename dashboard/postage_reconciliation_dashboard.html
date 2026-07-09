@@ -32,15 +32,16 @@
     --radius:12px; --r-sm:8px;
   }
   html[data-theme="dark"]{
-    --header:#0d1729; --header-2:#13233f; --band:#a23a3a;
-    --bg:#0a1220; --surface:#131f36; --surface-2:#182842; --surface-3:#1d3050;
-    --text:#e7eef8; --muted:#93a2bd; --border:#25385a; --border-2:#20314f;
-    --accent:#5c96de; --accent-weak:#17294a;
-    --ok:#48d183; --ok-bg:#0e3524; --check:#f0b442; --check-bg:#392a08;
-    --leak:#f2726f; --leak-bg:#3d1515; --kill:#f4a3a3; --kill-bg:#4a1820;
-    --pass:#48d183; --pass-bg:#0e3524; --fail:#f2726f; --fail-bg:#3d1515; --na:#93a2bd; --na-bg:#1b2c48;
-    --pos:#f2726f; --neg:#48d183;
-    --shadow:0 1px 2px rgba(0,0,0,.4),0 2px 10px rgba(0,0,0,.35);
+    /* Enterprise slate palette — high contrast, no washed-out / overly bright cards. Header keeps #15243d. */
+    --header:#15243d; --header-2:#1b2c49; --band:#9c3a3a;
+    --bg:#0e141f; --surface:#171f2c; --surface-2:#1e2735; --surface-3:#242f40;
+    --text:#e7ecf4; --muted:#94a1b5; --border:#2b3648; --border-2:#232d3c;
+    --accent:#5b9bf0; --accent-weak:#17273c;
+    --ok:#3ecf8e; --ok-bg:#0f2c22; --check:#e0a63a; --check-bg:#352a11;
+    --leak:#f07a72; --leak-bg:#391b19; --kill:#f0a3a0; --kill-bg:#41211f;
+    --pass:#3ecf8e; --pass-bg:#0f2c22; --fail:#f07a72; --fail-bg:#391b19; --na:#94a1b5; --na-bg:#232d3c;
+    --pos:#f07a72; --neg:#3ecf8e;
+    --shadow:0 1px 2px rgba(0,0,0,.5),0 2px 10px rgba(0,0,0,.38);
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
@@ -85,7 +86,7 @@
     border-radius:var(--r-sm);cursor:pointer;font-size:12px;font-weight:600}
   .filters .clear:hover{color:var(--accent);border-color:var(--accent)}
   /* Layout — wide, minimal side margin */
-  main{padding:20px 24px 8px;max-width:1860px;margin:0 auto}
+  main{padding:16px 18px 10px;margin:0 auto;width:100%}
   .page{display:none;animation:fade .22s ease}
   .page.active{display:block}
   @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
@@ -99,18 +100,19 @@
   h2.sec:first-child{margin-top:2px}
   .muted{color:var(--muted)}
   /* KPI cards */
-  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(184px,1fr));gap:13px}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:15px 16px;
-    box-shadow:var(--shadow);position:relative;overflow:hidden;transition:transform .12s,box-shadow .12s}
-  .card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(20,35,64,.12)}
+  /* Full-width KPI strip: auto-fit stretches columns edge-to-edge (no right-side gap). Compact height. */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;width:100%}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:9px 12px;
+    box-shadow:var(--shadow);position:relative;overflow:hidden;transition:transform .12s,box-shadow .12s;
+    display:flex;flex-direction:column;justify-content:center;min-height:0}
+  .card:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(20,35,64,.12)}
   .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
   .card.c-ok::before{background:var(--ok)} .card.c-warn::before{background:var(--check)}
   .card.c-cost::before{background:#7c5cd0} .card.c-na::before{background:var(--muted)}
-  .card .k-label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700}
-  .card .k-value{font-size:25px;font-weight:750;margin-top:8px;letter-spacing:-.5px;line-height:1}
-  .card .k-sub{font-size:11px;color:var(--muted);margin-top:6px}
-  .card.c-na .k-value{color:var(--muted);font-size:16px;font-weight:600}
-  .card .k-mini{font-size:11px;font-weight:700;margin-top:5px}
+  .card .k-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .card .k-value{font-size:21px;font-weight:750;margin-top:3px;letter-spacing:-.4px;line-height:1.05;white-space:nowrap}
+  .card .k-sub{font-size:9px;color:var(--muted);margin-top:2px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .card.c-na .k-value{color:var(--muted);font-size:14px;font-weight:650}
   /* Tables */
   .tablewrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
     box-shadow:var(--shadow);overflow:hidden}
@@ -150,6 +152,9 @@
   .bar .bl{font-size:10px;color:var(--muted);white-space:nowrap}
   .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   @media(max-width:900px){.two-col{grid-template-columns:1fr}}
+  /* Focus states (keyboard accessibility) */
+  button:focus-visible,select:focus-visible,input:focus-visible,th:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+  nav.tabs button:focus-visible{outline-offset:-2px}
   footer.app{padding:16px 24px;color:var(--muted);font-size:11px;text-align:center;border-top:1px solid var(--border);margin-top:26px}
   /* Responsive */
   @media(max-width:760px){
@@ -196,14 +201,14 @@ const dashboardData = {
     open_disputes:2           // auto-flagged rows in the Leakage Register below
   },
   carrierSummary:[
-    {carrier:"Royal Mail",labels:2273,expected_gbp:6533.84,actual_gbp:6473.21,avg_rate:2.848,baseline_rate:2.875,variance_gbp:-60.63,variance_pct:-0.0093,status:"CHECK",owner:"TBD — Royal Mail"},
-    {carrier:"DHL",labels:514,expected_gbp:2940.76,actual_gbp:3038.22,avg_rate:5.911,baseline_rate:5.721,variance_gbp:97.46,variance_pct:0.0331,status:"LEAK",owner:"TBD — DHL"},
-    {carrier:"Evri",labels:348,expected_gbp:1636.59,actual_gbp:1587.25,avg_rate:4.696,baseline_rate:4.703,variance_gbp:-49.34,variance_pct:-0.0301,status:"LEAK",owner:"TBD — Evri"},
-    {carrier:"Amazon Shipping",labels:223,expected_gbp:970.05,actual_gbp:970.05,avg_rate:4.350,baseline_rate:4.350,variance_gbp:0.00,variance_pct:0.0000,status:"OK",owner:"TBD — Amazon Shipping"},
-    {carrier:"Wayfair",labels:146,expected_gbp:null,actual_gbp:null,avg_rate:null,baseline_rate:null,variance_gbp:null,variance_pct:null,status:"OK",owner:"TBD — Wayfair"},
-    {carrier:"DPD",labels:78,expected_gbp:315.90,actual_gbp:315.90,avg_rate:4.050,baseline_rate:4.050,variance_gbp:0.00,variance_pct:0.0000,status:"OK",owner:"TBD — DPD"},
-    {carrier:"GLS",labels:25,expected_gbp:113.50,actual_gbp:113.50,avg_rate:4.540,baseline_rate:4.540,variance_gbp:0.00,variance_pct:0.0000,status:"OK",owner:"TBD — GLS"},
-    {carrier:"Others",labels:24,expected_gbp:111.37,actual_gbp:19.18,avg_rate:3.197,baseline_rate:4.640,variance_gbp:-92.19,variance_pct:-0.8278,status:"KILL",owner:"TBD — Others / kill"}
+    {week_label:"W27 2026",week_start:"2026-06-29",week_end:"2026-07-05",carrier:"Royal Mail",labels:2273,expected_gbp:6533.84,actual_gbp:6473.21,avg_rate:2.848,baseline_rate:2.875,variance_gbp:-60.63,variance_pct:-0.0093,status:"CHECK",owner:"TBD — Royal Mail"},
+    {week_label:"W27 2026",week_start:"2026-06-29",week_end:"2026-07-05",carrier:"DHL",labels:514,expected_gbp:2940.76,actual_gbp:3038.22,avg_rate:5.911,baseline_rate:5.721,variance_gbp:97.46,variance_pct:0.0331,status:"LEAK",owner:"TBD — DHL"},
+    {week_label:"W27 2026",week_start:"2026-06-29",week_end:"2026-07-05",carrier:"Evri",labels:348,expected_gbp:1636.59,actual_gbp:1587.25,avg_rate:4.696,baseline_rate:4.703,variance_gbp:-49.34,variance_pct:-0.0301,status:"LEAK",owner:"TBD — Evri"},
+    {week_label:"W27 2026",week_start:"2026-06-29",week_end:"2026-07-05",carrier:"Amazon Shipping",labels:223,expected_gbp:970.05,actual_gbp:970.05,avg_rate:4.350,baseline_rate:4.350,variance_gbp:0.00,variance_pct:0.0000,status:"OK",owner:"TBD — Amazon Shipping"},
+    {week_label:"W27 2026",week_start:"2026-06-29",week_end:"2026-07-05",carrier:"Wayfair",labels:146,expected_gbp:null,actual_gbp:null,avg_rate:null,baseline_rate:null,variance_gbp:null,variance_pct:null,status:"OK",owner:"TBD — Wayfair"},
+    {week_label:"W27 2026",week_start:"2026-06-29",week_end:"2026-07-05",carrier:"DPD",labels:78,expected_gbp:315.90,actual_gbp:315.90,avg_rate:4.050,baseline_rate:4.050,variance_gbp:0.00,variance_pct:0.0000,status:"OK",owner:"TBD — DPD"},
+    {week_label:"W27 2026",week_start:"2026-06-29",week_end:"2026-07-05",carrier:"GLS",labels:25,expected_gbp:113.50,actual_gbp:113.50,avg_rate:4.540,baseline_rate:4.540,variance_gbp:0.00,variance_pct:0.0000,status:"OK",owner:"TBD — GLS"},
+    {week_label:"W27 2026",week_start:"2026-06-29",week_end:"2026-07-05",carrier:"Others",labels:24,expected_gbp:111.37,actual_gbp:19.18,avg_rate:3.197,baseline_rate:4.640,variance_gbp:-92.19,variance_pct:-0.8278,status:"KILL",owner:"TBD — Others / kill"}
   ],
   dailyControl:[
     {date:"2026-06-29",week_label:"W27 2026",total_orders:610,fba_excluded:43,wayfair:17,self_labelled:550,labels:567,gap:0,actual_gbp:1942.64,avg_rate:3.558,closure:"✓ Closed"},
@@ -215,105 +220,361 @@ const dashboardData = {
     {date:"2026-07-05",week_label:"W27 2026",total_orders:631,fba_excluded:57,wayfair:30,self_labelled:544,labels:574,gap:0,actual_gbp:2031.19,avg_rate:3.748,closure:"✓ Closed"}
   ],
   kpis:[
-    {row:22,kpi:"Daily reconciliation accuracy",blos_key:"postage.daily_recon_target",target:1.0,actual:1.0,fmt:"pct",status:"PASS",note:"7/7 days order-vs-label gap = 0"},
-    {row:23,kpi:"Weekly leakage £ (vs baseline)",blos_key:"postage.leakage_trigger_gbp",target:0,actual:97.46,fmt:"gbp",status:"FAIL",note:"DHL +£97.46 above 8-week baseline rate"},
-    {row:24,kpi:"Weekly leakage % (vs baseline)",blos_key:"postage.leakage_pct_max",target:0.01,actual:0.0077,fmt:"pct",status:"PASS",note:"unfavourable variance 0.77% of expected (≤1%)"},
-    {row:25,kpi:"Recovery rate",blos_key:"postage.recovery_rate_min",target:0.80,actual:null,fmt:"pct",status:"N/A",note:"no credit-recovered / dispute source"},
-    {row:26,kpi:"Avg dispute age (days)",blos_key:"postage.dispute_age_max_days",target:14,actual:null,fmt:"num",status:"N/A",note:"no dispute table"},
-    {row:27,kpi:"Others share",blos_key:"postage.others_share_max",target:0.02,actual:0.0066,fmt:"pct",status:"PASS",note:"heuristic Others 24/3631 labels = 0.66%"},
-    {row:28,kpi:"Rate card age (days)",blos_key:"postage.rate_card_age_max_days",target:30,actual:null,fmt:"num",status:"N/A",note:"no rate card; expected uses 8-week baseline"},
-    {row:29,kpi:"Service spend %",blos_key:"postage.service_spend_pct_max",target:0.05,actual:null,fmt:"pct",status:"N/A",note:"no label_type in DB"},
-    {row:30,kpi:"Service-to-customer ratio",blos_key:"postage.service_ratio_max",target:0.03,actual:null,fmt:"pct",status:"N/A",note:"no label_type in DB"},
-    {row:31,kpi:"Return rate (returns / customer)",blos_key:"postage.return_rate_max",target:0.02,actual:null,fmt:"pct",status:"N/A",note:"eBay SHIPPING_LABEL only 45 rows, none return-linked"}
+    // README Dashboard rows 22-31. NO hardcoded thresholds: Target and PASS/FAIL are derived
+    // at render time from the `blos` object via blos_key (satisfies README audit check #2).
+    {row:22,kpi:"Daily reconciliation accuracy",blos_key:"postage.daily_recon_target",direction:"higher",actual:1.0,fmt:"pct",note:"7/7 days order-vs-label gap = 0 (customer side; service gap unverifiable — no label_type)"},
+    {row:23,kpi:"Weekly leakage £",blos_key:"postage.leakage_trigger_gbp",direction:"lower",actual:97.46,fmt:"gbp",note:"DHL +£97.46 above 8-week baseline; PASS if 0 or < trigger"},
+    {row:24,kpi:"Weekly leakage %",blos_key:"postage.leakage_pct_max",direction:"lower",actual:0.0077,fmt:"pct",note:"unfavourable variance = 0.77% of expected"},
+    {row:25,kpi:"Recovery rate",blos_key:"postage.recovery_rate_min",direction:"higher",actual:null,fmt:"pct",note:"Credit Recovered £ has no source (manual entry) — not computable"},
+    {row:26,kpi:"Avg dispute age (days)",blos_key:"postage.dispute_age_max_days",direction:"lower",actual:null,fmt:"num",note:"no dispute table in PostgreSQL"},
+    {row:27,kpi:"Others share",blos_key:"postage.others_share_max",direction:"lower",actual:0.0066,fmt:"pct",note:"Others 24 / 3,631 labels = 0.66%"},
+    {row:28,kpi:"Rate card age (days)",blos_key:"postage.rate_card_age_max_days",direction:"lower",actual:310,fmt:"num",note:"Workbook Rate Card (Sheet 4, 208 rows): newest Effective From = 2025-09-01; as-of 2026-07-08 = 310 days. Exceeds the 30-day BLOS limit -> rate card is 10 months stale. PostgreSQL blos.postage exists but holds 0 rows."},
+    {row:29,kpi:"Service spend %",blos_key:"postage.service_spend_pct_max",direction:"lower",actual:null,fmt:"pct",note:"no label_type column in PostgreSQL"},
+    {row:30,kpi:"Service-to-customer ratio",blos_key:"postage.service_ratio_max",direction:"lower",actual:null,fmt:"pct",note:"no label_type column in PostgreSQL"},
+    {row:31,kpi:"Return rate (returns / customer orders)",blos_key:"postage.return_rate_max",direction:"lower",actual:0.0410,fmt:"pct",note:"VERIFIED: Return Label In = 149 (Amazon prepaid 110 + eBay label-evidenced 39) / 3,631 customer-order labels = 4.10%. Billed-only basis = 111 -> 3.06%; orders denominator (4,020) -> 3.71%. FAILS the 2% target on every basis. Still a LOWER BOUND: Return Label Out needs shipment.label_type. Excludes 29 FBA returns, 30 AmazonUnPaidLabel, 14 Shopify refunds (no label)."}
   ],
   leakageRegister:[
-    {gap_id:"GAP-W27-01",date_raised:"2026-07-06",carrier:"DHL",issue_type:"Rate drift vs baseline",basis:"Actual carrier_charge £3,038.22 vs 8-week expected £2,940.76",expected_gbp:2940.76,actual_gbp:3038.22,leakage_gbp:97.46,variance_pct:0.0331,days_open:2,status:"Open",owner:"TBD — DHL"},
-    {gap_id:"GAP-W27-02",date_raised:"2026-07-06",carrier:"Others",issue_type:"Unmapped carrier (KILL)",basis:"24 labels not classified to a known carrier — reclassify within 24h",expected_gbp:111.37,actual_gbp:19.18,leakage_gbp:0.00,variance_pct:-0.8278,days_open:2,status:"Killed",owner:"TBD — Others / kill"}
+    // Auto-flagged from the cost-variance check (README Section 6 step 5).
+    // Issue Type MUST come from Lists (README Sheet 6 col E). DHL root cause not yet
+    // investigated -> issue_type NULL = "uncategorised" (README-permitted). NOT invented.
+    {gap_id:"GAP-W27-01",date_raised:"2026-07-06",week_start:"2026-06-29",week_label:"W27 2026",carrier:"DHL",
+     issue_type:null,trigger_source:"Weekly Invoice Check (auto)",expected_gbp:2940.76,actual_gbp:3038.22,
+     leakage_gbp:97.46,variance_pct:0.0331,days_open:2,owner:"TBD — DHL",
+     root_cause:null,status:"Open",credit_recovered_gbp:null,label_type:null},
+    {gap_id:"GAP-W27-02",date_raised:"2026-07-06",week_start:"2026-06-29",week_label:"W27 2026",carrier:"Others",
+     issue_type:"Unmapped carrier",trigger_source:"Weekly Invoice Check (auto)",expected_gbp:111.37,actual_gbp:19.18,
+     leakage_gbp:0.00,variance_pct:-0.8278,days_open:2,owner:"TBD — Others / kill",
+     root_cause:"24 labels not classified to a known carrier — reclassify within 24h",status:"Killed",
+     credit_recovered_gbp:null,label_type:null}
   ],
-  rateCard:[],   // no rate-card table in PostgreSQL; expected uses derived 8-week baseline
+  // Rate Card — Sheet 4 of the WORKBOOK (the business spec owns this master price list).
+  // 208 rows, all with Effective From. PostgreSQL blos.postage exists but has 0 rows,
+  // so this is workbook-sourced (exactly as the BLOS thresholds are). rate_card_as_of
+  // drives KPI 28: newest Effective From = 2025-09-01 -> 310 days at 2026-07-08 -> FAIL.
+  rateCardMeta:{source:"workbook Sheet 4", rows:208, newest_effective_from:"2025-09-01", as_of:"2026-07-08", age_days:310},
+  rateCard:[
+    {lookup_key:"Evri|Packet|2kg|UK Domestic",carrier:"Evri",service:"Packet",weight_band:"2kg",max_kg:2.0,destination:"UK Domestic",rate_ex_vat:2.3,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|Parcel|5kg|UK Domestic",carrier:"Evri",service:"Parcel",weight_band:"5kg",max_kg:5.0,destination:"UK Domestic",rate_ex_vat:2.61,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|Parcel|15kg|UK Domestic",carrier:"Evri",service:"Parcel",weight_band:"15kg",max_kg:15.0,destination:"UK Domestic",rate_ex_vat:2.61,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|Packet|2kg|UK Domestic",carrier:"Evri",service:"Packet",weight_band:"2kg",max_kg:2.0,destination:"UK Domestic",rate_ex_vat:4.95,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|Parcel|5kg|UK Domestic",carrier:"Evri",service:"Parcel",weight_band:"5kg",max_kg:5.0,destination:"UK Domestic",rate_ex_vat:4.95,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|Parcel|15kg|UK Domestic",carrier:"Evri",service:"Parcel",weight_band:"15kg",max_kg:15.0,destination:"UK Domestic",rate_ex_vat:4.95,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|Packet|2kg|UK Domestic",carrier:"Evri",service:"Packet",weight_band:"2kg",max_kg:2.0,destination:"UK Domestic",rate_ex_vat:4.95,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|Packet|2kg|UK Domestic",carrier:"Evri",service:"Packet",weight_band:"2kg",max_kg:2.0,destination:"UK Domestic",rate_ex_vat:4.95,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|Parcel|5kg|UK Domestic",carrier:"Evri",service:"Parcel",weight_band:"5kg",max_kg:5.0,destination:"UK Domestic",rate_ex_vat:4.95,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|Parcel|15kg|UK Domestic",carrier:"Evri",service:"Parcel",weight_band:"15kg",max_kg:15.0,destination:"UK Domestic",rate_ex_vat:4.95,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|Packet|2kg|UK Domestic",carrier:"Evri",service:"Packet",weight_band:"2kg",max_kg:2.0,destination:"UK Domestic",rate_ex_vat:4.95,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|Packet|2kg|UK Domestic",carrier:"Evri",service:"Packet",weight_band:"2kg",max_kg:2.0,destination:"UK Domestic",rate_ex_vat:2.61,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|Parcel|5kg|UK Domestic",carrier:"Evri",service:"Parcel",weight_band:"5kg",max_kg:5.0,destination:"UK Domestic",rate_ex_vat:3.03,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|FR",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"FR",rate_ex_vat:6.77,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|FR",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"FR",rate_ex_vat:8.77,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|DE",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"DE",rate_ex_vat:5.7,vat_pct:0.19,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|DE",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"DE",rate_ex_vat:6.75,vat_pct:0.19,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|IT",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"IT",rate_ex_vat:8.07,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|IT",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"IT",rate_ex_vat:10.91,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|IR",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"IR",rate_ex_vat:5.74,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|IR",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"IR",rate_ex_vat:6.13,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Austria",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Austria",rate_ex_vat:8.24,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Austria",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Austria",rate_ex_vat:8.8,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Belgium",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Belgium",rate_ex_vat:6.78,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Belgium",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Belgium",rate_ex_vat:7.32,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Denmark",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Denmark",rate_ex_vat:7.71,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Denmark",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Denmark",rate_ex_vat:8.5,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Bulgaria",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Bulgaria",rate_ex_vat:9.16,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Bulgaria",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Bulgaria",rate_ex_vat:11.25,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Croatia",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Croatia",rate_ex_vat:9.15,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Croatia",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Croatia",rate_ex_vat:10.34,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Denmark",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Denmark",rate_ex_vat:7.71,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Denmark",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Denmark",rate_ex_vat:8.5,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Luxembourg",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Luxembourg",rate_ex_vat:7.46,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Luxembourg",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Luxembourg",rate_ex_vat:8.0,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Netherlands",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Netherlands",rate_ex_vat:6.74,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Netherlands",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Netherlands",rate_ex_vat:7.19,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Spain",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Spain",rate_ex_vat:6.35,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Spain",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Spain",rate_ex_vat:8.11,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Czechia",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Czechia",rate_ex_vat:7.17,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Czechia",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Czechia",rate_ex_vat:7.63,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Finland",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Finland",rate_ex_vat:9.67,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Finland",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Finland",rate_ex_vat:10.31,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Greece",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Greece",rate_ex_vat:13.52,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Greece",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Greece",rate_ex_vat:28.99,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Hungary",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Hungary",rate_ex_vat:8.31,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Hungary",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Hungary",rate_ex_vat:9.1,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Latvia",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Latvia",rate_ex_vat:10.99,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Latvia",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Latvia",rate_ex_vat:11.57,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Malta",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Malta",rate_ex_vat:13.52,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Malta",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Malta",rate_ex_vat:28.99,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Poland",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Poland",rate_ex_vat:7.59,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Poland",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Poland",rate_ex_vat:8.11,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Slovenia",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Slovenia",rate_ex_vat:9.96,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Slovenia",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Slovenia",rate_ex_vat:10.99,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Sweden",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Sweden",rate_ex_vat:7.76,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Sweden",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Sweden",rate_ex_vat:9.8,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Lithuania",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Lithuania",rate_ex_vat:10.99,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Lithuania",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Lithuania",rate_ex_vat:11.57,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Cyprus",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Cyprus",rate_ex_vat:13.52,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Cyprus",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Cyprus",rate_ex_vat:28.99,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Slovakia",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Slovakia",rate_ex_vat:7.07,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Slovakia",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Slovakia",rate_ex_vat:8.1,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Romania",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Romania",rate_ex_vat:8.33,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Romania",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Romania",rate_ex_vat:9.33,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Estonia",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Estonia",rate_ex_vat:10.99,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Estonia",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Estonia",rate_ex_vat:11.57,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Portugal",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Portugal",rate_ex_vat:7.31,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Portugal",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Portugal",rate_ex_vat:9.92,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Portugal - Portuguese Islands",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Portugal - Portuguese Islands",rate_ex_vat:18.14,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Portugal - Portuguese Islands",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Portugal - Portuguese Islands",rate_ex_vat:38.94,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Spain - Balearic Islands",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Spain - Balearic Islands",rate_ex_vat:18.14,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Spain - Balearic Islands",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Spain - Balearic Islands",rate_ex_vat:38.94,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|2kg|Spain - Canary Islands",carrier:"Evri",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Spain - Canary Islands",rate_ex_vat:18.14,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Evri|International|30kg|Spain - Canary Islands",carrier:"Evri",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Spain - Canary Islands",rate_ex_vat:38.94,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DPD|Parcel|30kg|UK Domestic",carrier:"DPD",service:"Parcel",weight_band:"30kg",max_kg:30.0,destination:"UK Domestic",rate_ex_vat:4.62,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"DPD|Parcel|30kg|UK Domestic - Offshore - IV / PA postcodes",carrier:"DPD",service:"Parcel",weight_band:"30kg",max_kg:30.0,destination:"UK Domestic - Offshore - IV / PA postcodes",rate_ex_vat:13.67,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DPD|Parcel|30kg|UK Domestic - Offshore - BT postcodes",carrier:"DPD",service:"Parcel",weight_band:"30kg",max_kg:30.0,destination:"UK Domestic - Offshore - BT postcodes",rate_ex_vat:11.4,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|FR",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"FR",rate_ex_vat:10.75,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|4kg|FR",carrier:"Royal Mail",service:"International",weight_band:"4kg",max_kg:4.0,destination:"FR",rate_ex_vat:12.0,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|5kg|FR",carrier:"Royal Mail",service:"International",weight_band:"5kg",max_kg:5.0,destination:"FR",rate_ex_vat:12.4,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|15kg|FR",carrier:"Royal Mail",service:"International",weight_band:"15kg",max_kg:15.0,destination:"FR",rate_ex_vat:18.0,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|FR",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"FR",rate_ex_vat:7.1,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|FR",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"FR",rate_ex_vat:7.58,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|DE",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"DE",rate_ex_vat:9.5,vat_pct:0.19,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|5kg|DE",carrier:"Royal Mail",service:"International",weight_band:"5kg",max_kg:5.0,destination:"DE",rate_ex_vat:12.3,vat_pct:0.19,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|30kg|DE",carrier:"Royal Mail",service:"International",weight_band:"30kg",max_kg:30.0,destination:"DE",rate_ex_vat:23.4,vat_pct:0.19,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|1kg|DE",carrier:"Royal Mail",service:"International",weight_band:"1kg",max_kg:1.0,destination:"DE",rate_ex_vat:6.85,vat_pct:0.19,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|DE",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"DE",rate_ex_vat:7.6,vat_pct:0.19,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|DE",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"DE",rate_ex_vat:8.49,vat_pct:0.19,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|4kg|DE",carrier:"Royal Mail",service:"International",weight_band:"4kg",max_kg:4.0,destination:"DE",rate_ex_vat:11.75,vat_pct:0.19,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|6kg|DE",carrier:"Royal Mail",service:"International",weight_band:"6kg",max_kg:6.0,destination:"DE",rate_ex_vat:13.35,vat_pct:0.19,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|IR",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"IR",rate_ex_vat:8.45,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|5kg|IR",carrier:"Royal Mail",service:"International",weight_band:"5kg",max_kg:5.0,destination:"IR",rate_ex_vat:10.4,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|IR",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"IR",rate_ex_vat:8.2,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|5kg|IR",carrier:"Royal Mail",service:"International",weight_band:"5kg",max_kg:5.0,destination:"IR",rate_ex_vat:10.15,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|IR",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"IR",rate_ex_vat:8.68,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|1kg|Norway",carrier:"Royal Mail",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Norway",rate_ex_vat:10.35,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Norway",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Norway",rate_ex_vat:12.75,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Norway",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Norway",rate_ex_vat:21.5,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Spain",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Spain",rate_ex_vat:12.8,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|5kg|Spain",carrier:"Royal Mail",service:"International",weight_band:"5kg",max_kg:5.0,destination:"Spain",rate_ex_vat:17.6,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|1kg|Spain",carrier:"Royal Mail",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Spain",rate_ex_vat:7.0,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Spain",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Spain",rate_ex_vat:8.7,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|USA",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"USA",rate_ex_vat:14.7,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|5kg|USA",carrier:"Royal Mail",service:"International",weight_band:"5kg",max_kg:5.0,destination:"USA",rate_ex_vat:31.5,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|USA",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"USA",rate_ex_vat:14.7,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|5kg|USA",carrier:"Royal Mail",service:"International",weight_band:"5kg",max_kg:5.0,destination:"USA",rate_ex_vat:31.15,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|0.5kg|Switzerland",carrier:"Royal Mail",service:"International",weight_band:"0.5kg",max_kg:0.5,destination:"Switzerland",rate_ex_vat:9.53,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Switzerland",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Switzerland",rate_ex_vat:13.35,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|5kg|Switzerland",carrier:"Royal Mail",service:"International",weight_band:"5kg",max_kg:5.0,destination:"Switzerland",rate_ex_vat:21.0,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|1kg|Switzerland",carrier:"Royal Mail",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Switzerland",rate_ex_vat:10.8,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|1kg|Switzerland",carrier:"Royal Mail",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Switzerland",rate_ex_vat:11.9,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Switzerland",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Switzerland",rate_ex_vat:12.35,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|5kg|Switzerland",carrier:"Royal Mail",service:"International",weight_band:"5kg",max_kg:5.0,destination:"Switzerland",rate_ex_vat:15.6,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Switzerland",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Switzerland",rate_ex_vat:13.83,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Croatia",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Croatia",rate_ex_vat:15.9,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|5kg|Croatia",carrier:"Royal Mail",service:"International",weight_band:"5kg",max_kg:5.0,destination:"Croatia",rate_ex_vat:17.65,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Croatia",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Croatia",rate_ex_vat:15.8,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Belgium",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Belgium",rate_ex_vat:14.5,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|5kg|Belgium",carrier:"Royal Mail",service:"International",weight_band:"5kg",max_kg:5.0,destination:"Belgium",rate_ex_vat:27.55,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Belgium",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Belgium",rate_ex_vat:14.65,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|5kg|Belgium",carrier:"Royal Mail",service:"International",weight_band:"5kg",max_kg:5.0,destination:"Belgium",rate_ex_vat:14.8,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|0.5kg|Cyprus",carrier:"Royal Mail",service:"International",weight_band:"0.5kg",max_kg:0.5,destination:"Cyprus",rate_ex_vat:9.03,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Cyprus",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Cyprus",rate_ex_vat:15.55,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|5kg|Cyprus",carrier:"Royal Mail",service:"International",weight_band:"5kg",max_kg:5.0,destination:"Cyprus",rate_ex_vat:28.6,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Cyprus",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Cyprus",rate_ex_vat:15.65,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|5kg|Cyprus",carrier:"Royal Mail",service:"International",weight_band:"5kg",max_kg:5.0,destination:"Cyprus",rate_ex_vat:26.9,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Cyprus",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Cyprus",rate_ex_vat:18.88,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Malta",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Malta",rate_ex_vat:16.55,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|5kg|Malta",carrier:"Royal Mail",service:"International",weight_band:"5kg",max_kg:5.0,destination:"Malta",rate_ex_vat:30.55,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|0.5kg|Malta",carrier:"Royal Mail",service:"International",weight_band:"0.5kg",max_kg:0.5,destination:"Malta",rate_ex_vat:9.1,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Malta",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Malta",rate_ex_vat:16.45,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|5kg|Malta",carrier:"Royal Mail",service:"International",weight_band:"5kg",max_kg:5.0,destination:"Malta",rate_ex_vat:31.15,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Austria",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Austria",rate_ex_vat:11.7,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|5kg|Austria",carrier:"Royal Mail",service:"International",weight_band:"5kg",max_kg:5.0,destination:"Austria",rate_ex_vat:18.15,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Austria",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Austria",rate_ex_vat:9.7,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Austria",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Austria",rate_ex_vat:11.83,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Italy",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Italy",rate_ex_vat:13.1,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|5kg|Italy",carrier:"Royal Mail",service:"International",weight_band:"5kg",max_kg:5.0,destination:"Italy",rate_ex_vat:21.9,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|10kg|Italy",carrier:"Royal Mail",service:"International",weight_band:"10kg",max_kg:10.0,destination:"Italy",rate_ex_vat:28.15,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|30kg|Italy",carrier:"Royal Mail",service:"International",weight_band:"30kg",max_kg:30.0,destination:"Italy",rate_ex_vat:75.1,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Italy",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Italy",rate_ex_vat:11.85,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Portugal",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Portugal",rate_ex_vat:15.05,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|5kg|Portugal",carrier:"Royal Mail",service:"International",weight_band:"5kg",max_kg:5.0,destination:"Portugal",rate_ex_vat:24.25,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|10kg|Portugal",carrier:"Royal Mail",service:"International",weight_band:"10kg",max_kg:10.0,destination:"Portugal",rate_ex_vat:38.8,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Portugal",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Portugal",rate_ex_vat:12.7,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|5kg|Portugal",carrier:"Royal Mail",service:"International",weight_band:"5kg",max_kg:5.0,destination:"Portugal",rate_ex_vat:21.85,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Portugal",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Portugal",rate_ex_vat:14.24,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Hungary",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Hungary",rate_ex_vat:13.15,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|5kg|Hungary",carrier:"Royal Mail",service:"International",weight_band:"5kg",max_kg:5.0,destination:"Hungary",rate_ex_vat:21.15,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Royal Mail|International|2kg|Hungary",carrier:"Royal Mail",service:"International",weight_band:"2kg",max_kg:2.0,destination:"Hungary",rate_ex_vat:12.8,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Smart Track|Letter|500g|UK Domestic",carrier:"Smart Track",service:"Letter",weight_band:"500g",max_kg:0.5,destination:"UK Domestic",rate_ex_vat:2.06,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Smart Track|Parcel|2kg|UK Domestic",carrier:"Smart Track",service:"Parcel",weight_band:"2kg",max_kg:2.0,destination:"UK Domestic",rate_ex_vat:2.42,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Smart Track|Parcel|5kg|UK Domestic",carrier:"Smart Track",service:"Parcel",weight_band:"5kg",max_kg:5.0,destination:"UK Domestic",rate_ex_vat:2.7,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Smart Track|Letter|750g|UK Domestic",carrier:"Smart Track",service:"Letter",weight_band:"750g",max_kg:0.75,destination:"UK Domestic",rate_ex_vat:1.95,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Smart Track|Parcel|2kg|UK Domestic",carrier:"Smart Track",service:"Parcel",weight_band:"2kg",max_kg:2.0,destination:"UK Domestic",rate_ex_vat:2.18,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Smart Track|Parcel|5kg|UK Domestic",carrier:"Smart Track",service:"Parcel",weight_band:"5kg",max_kg:5.0,destination:"UK Domestic",rate_ex_vat:2.79,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Smart Track|Std 2nd Class - Large Letter|110g|UK Domestic",carrier:"Smart Track",service:"Std 2nd Class - Large Letter",weight_band:"110g",max_kg:0.11,destination:"UK Domestic",rate_ex_vat:1.89,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Smart Track|Std 2nd Class - Large Letter|100g|UK Domestic",carrier:"Smart Track",service:"Std 2nd Class - Large Letter",weight_band:"100g",max_kg:0.1,destination:"UK Domestic",rate_ex_vat:1.4,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Smart Track|Std 1st Class - Large Letter|250g|UK Domestic",carrier:"Smart Track",service:"Std 1st Class - Large Letter",weight_band:"250g",max_kg:0.25,destination:"UK Domestic",rate_ex_vat:3.19,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Smart Track|Std 1st Class - Packet|1kg|UK Domestic",carrier:"Smart Track",service:"Std 1st Class - Packet",weight_band:"1kg",max_kg:1.0,destination:"UK Domestic",rate_ex_vat:5.45,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Smart Track|Std 1st Class - Packet|1.03kg|UK Domestic",carrier:"Smart Track",service:"Std 1st Class - Packet",weight_band:"1.03kg",max_kg:1.03,destination:"UK Domestic",rate_ex_vat:6.19,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Amazon Shipping|Parcel|2kg|UK Domestic",carrier:"Amazon Shipping",service:"Parcel",weight_band:"2kg",max_kg:2.0,destination:"UK Domestic",rate_ex_vat:3.91,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Amazon Shipping|Parcel|5kg|UK Domestic",carrier:"Amazon Shipping",service:"Parcel",weight_band:"5kg",max_kg:5.0,destination:"UK Domestic",rate_ex_vat:4.85,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Amazon Shipping|Parcel|10kg|UK Domestic",carrier:"Amazon Shipping",service:"Parcel",weight_band:"10kg",max_kg:10.0,destination:"UK Domestic",rate_ex_vat:5.65,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Amazon Shipping|Parcel|2kg|UK Domestic",carrier:"Amazon Shipping",service:"Parcel",weight_band:"2kg",max_kg:2.0,destination:"UK Domestic",rate_ex_vat:3.52,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Amazon Shipping|Parcel|7kg|UK Domestic",carrier:"Amazon Shipping",service:"Parcel",weight_band:"7kg",max_kg:7.0,destination:"UK Domestic",rate_ex_vat:4.02,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"Amazon Shipping|Parcel|10kg|UK Domestic",carrier:"Amazon Shipping",service:"Parcel",weight_band:"10kg",max_kg:10.0,destination:"UK Domestic",rate_ex_vat:5.09,vat_pct:0.2,effective_from:"2025-01-01"},
+    {lookup_key:"GLS|Parcel|3kg|DE Domestic",carrier:"GLS",service:"Parcel",weight_band:"3kg",max_kg:3.0,destination:"DE Domestic",rate_ex_vat:3.23,vat_pct:0.19,effective_from:"2025-01-01"},
+    {lookup_key:"GLS|Parcel|8kg|DE Domestic",carrier:"GLS",service:"Parcel",weight_band:"8kg",max_kg:8.0,destination:"DE Domestic",rate_ex_vat:3.91,vat_pct:0.19,effective_from:"2025-01-01"},
+    {lookup_key:"GLS|Parcel|12kg|DE Domestic",carrier:"GLS",service:"Parcel",weight_band:"12kg",max_kg:12.0,destination:"DE Domestic",rate_ex_vat:5.27,vat_pct:0.19,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|Parcel|2kg|DE Domestic",carrier:"DHL",service:"Parcel",weight_band:"2kg",max_kg:2.0,destination:"DE Domestic",rate_ex_vat:4.06,vat_pct:0.19,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|Parcel|5kg|DE Domestic",carrier:"DHL",service:"Parcel",weight_band:"5kg",max_kg:5.0,destination:"DE Domestic",rate_ex_vat:4.4,vat_pct:0.19,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|Parcel|10kg|DE Domestic",carrier:"DHL",service:"Parcel",weight_band:"10kg",max_kg:10.0,destination:"DE Domestic",rate_ex_vat:4.73,vat_pct:0.19,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|Parcel|15kg|DE Domestic",carrier:"DHL",service:"Parcel",weight_band:"15kg",max_kg:15.0,destination:"DE Domestic",rate_ex_vat:5.07,vat_pct:0.19,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|Parcel|20kg|DE Domestic",carrier:"DHL",service:"Parcel",weight_band:"20kg",max_kg:20.0,destination:"DE Domestic",rate_ex_vat:5.31,vat_pct:0.19,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|Parcel|31.5kg|DE Domestic",carrier:"DHL",service:"Parcel",weight_band:"31.5kg",max_kg:31.5,destination:"DE Domestic",rate_ex_vat:5.76,vat_pct:0.19,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|International|1kg|Austria",carrier:"DHL",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Austria",rate_ex_vat:8.7,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|International|1kg|Belgium",carrier:"DHL",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Belgium",rate_ex_vat:9.25,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|International|1kg|France",carrier:"DHL",service:"International",weight_band:"1kg",max_kg:1.0,destination:"France",rate_ex_vat:10.91,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|International|1kg|Italy",carrier:"DHL",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Italy",rate_ex_vat:8.7,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|International|1kg|Luxembourg",carrier:"DHL",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Luxembourg",rate_ex_vat:13.56,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|International|1kg|Netherlands",carrier:"DHL",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Netherlands",rate_ex_vat:8.15,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|International|1kg|Spain",carrier:"DHL",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Spain",rate_ex_vat:14.1,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|International|1kg|Slovenia",carrier:"DHL",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Slovenia",rate_ex_vat:14.1,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|International|1kg|Finland",carrier:"DHL",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Finland",rate_ex_vat:14.1,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|International|1kg|Portugal",carrier:"DHL",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Portugal",rate_ex_vat:14.1,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|International|1kg|Denmark",carrier:"DHL",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Denmark",rate_ex_vat:13.56,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|International|1kg|Sweden",carrier:"DHL",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Sweden",rate_ex_vat:14.1,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|International|1kg|Poland",carrier:"DHL",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Poland",rate_ex_vat:13.56,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|International|1kg|Czech Republic",carrier:"DHL",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Czech Republic",rate_ex_vat:13.56,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|International|1kg|Norway",carrier:"DHL",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Norway",rate_ex_vat:17.6,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|International|1kg|Estonia",carrier:"DHL",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Estonia",rate_ex_vat:14.2,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|International|1kg|Malta",carrier:"DHL",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Malta",rate_ex_vat:14.2,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|International|1kg|Latvia",carrier:"DHL",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Latvia",rate_ex_vat:14.2,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|International|1kg|Bulgaria",carrier:"DHL",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Bulgaria",rate_ex_vat:14.2,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|International|1kg|Ireland",carrier:"DHL",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Ireland",rate_ex_vat:14.2,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|International|1kg|Cyprus",carrier:"DHL",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Cyprus",rate_ex_vat:14.2,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|International|1kg|Greece",carrier:"DHL",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Greece",rate_ex_vat:14.2,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"DHL|International|1kg|Switzerland",carrier:"DHL",service:"International",weight_band:"1kg",max_kg:1.0,destination:"Switzerland",rate_ex_vat:17.0,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"USPS|Parcel Select Ground|2kg|US Domestic",carrier:"USPS",service:"Parcel Select Ground",weight_band:"2kg",max_kg:2.0,destination:"US Domestic",rate_ex_vat:9.5,vat_pct:0.0,effective_from:"2025-09-01"},
+    {lookup_key:"USPS|Parcel Select Ground|5kg|US Domestic",carrier:"USPS",service:"Parcel Select Ground",weight_band:"5kg",max_kg:5.0,destination:"US Domestic",rate_ex_vat:12.0,vat_pct:0.0,effective_from:"2025-09-01"},
+    {lookup_key:"USPS|Parcel Select Ground|15kg|US Domestic",carrier:"USPS",service:"Parcel Select Ground",weight_band:"15kg",max_kg:15.0,destination:"US Domestic",rate_ex_vat:22.0,vat_pct:0.0,effective_from:"2025-09-01"},
+    {lookup_key:"USPS|Priority Mail|2kg|US Domestic",carrier:"USPS",service:"Priority Mail",weight_band:"2kg",max_kg:2.0,destination:"US Domestic",rate_ex_vat:14.0,vat_pct:0.0,effective_from:"2025-09-01"},
+    {lookup_key:"USPS|Priority Mail|5kg|US Domestic",carrier:"USPS",service:"Priority Mail",weight_band:"5kg",max_kg:5.0,destination:"US Domestic",rate_ex_vat:18.0,vat_pct:0.0,effective_from:"2025-09-01"},
+    {lookup_key:"Wayfair|3rd-party label|n/a|UK Domestic",carrier:"Wayfair",service:"3rd-party label",weight_band:"n/a",max_kg:30.0,destination:"UK Domestic",rate_ex_vat:0.0,vat_pct:0.0,effective_from:"2025-01-01"},
+    {lookup_key:"Others|Unmapped|n/a|UK Domestic",carrier:"Others",service:"Unmapped",weight_band:"n/a",max_kg:30.0,destination:"UK Domestic",rate_ex_vat:0.0,vat_pct:0.2,effective_from:"2025-01-01"}
+  ],
   bookingLog:[
-    {date:"2026-06-29",carrier:"Royal Mail",destination:"United Kingdom",qty:353,actual_gbp:970.88},
-    {date:"2026-06-29",carrier:"DHL",destination:"Germany",qty:70,actual_gbp:306.75},
-    {date:"2026-06-29",carrier:"Amazon Shipping",destination:"United Kingdom",qty:39,actual_gbp:169.65},
-    {date:"2026-06-29",carrier:"Evri",destination:"United Kingdom",qty:20,actual_gbp:47.08},
-    {date:"2026-06-29",carrier:"Wayfair",destination:"United Kingdom",qty:13,actual_gbp:null},
-    {date:"2026-06-29",carrier:"DPD",destination:"United Kingdom",qty:12,actual_gbp:48.60},
-    {date:"2026-06-29",carrier:"Evri",destination:"Ireland",qty:10,actual_gbp:67.65},
-    {date:"2026-06-29",carrier:"DHL",destination:"France",qty:7,actual_gbp:87.57},
-    {date:"2026-06-29",carrier:"Evri",destination:"Italy",qty:7,actual_gbp:35.65},
-    {date:"2026-06-29",carrier:"Evri",destination:"Germany",qty:7,actual_gbp:38.71},
-    {date:"2026-06-29",carrier:"GLS",destination:"Germany",qty:5,actual_gbp:22.70},
-    {date:"2026-06-30",carrier:"Royal Mail",destination:"United Kingdom",qty:357,actual_gbp:1003.36},
-    {date:"2026-06-30",carrier:"DHL",destination:"Germany",qty:53,actual_gbp:232.35},
-    {date:"2026-06-30",carrier:"Amazon Shipping",destination:"United Kingdom",qty:30,actual_gbp:130.50},
-    {date:"2026-06-30",carrier:"Evri",destination:"United Kingdom",qty:24,actual_gbp:55.32},
-    {date:"2026-06-30",carrier:"DPD",destination:"United Kingdom",qty:20,actual_gbp:81.00},
-    {date:"2026-06-30",carrier:"Wayfair",destination:"United Kingdom",qty:18,actual_gbp:null},
-    {date:"2026-06-30",carrier:"Evri",destination:"Italy",qty:10,actual_gbp:65.18},
-    {date:"2026-06-30",carrier:"Evri",destination:"Germany",qty:9,actual_gbp:52.24},
-    {date:"2026-06-30",carrier:"Evri",destination:"France",qty:9,actual_gbp:49.18},
-    {date:"2026-06-30",carrier:"DHL",destination:"Italy",qty:6,actual_gbp:75.06},
-    {date:"2026-06-30",carrier:"DHL",destination:"France",qty:6,actual_gbp:75.06},
-    {date:"2026-06-30",carrier:"GLS",destination:"Germany",qty:5,actual_gbp:22.70},
-    {date:"2026-07-01",carrier:"Royal Mail",destination:"United Kingdom",qty:321,actual_gbp:923.75},
-    {date:"2026-07-01",carrier:"DHL",destination:"Germany",qty:67,actual_gbp:296.40},
-    {date:"2026-07-01",carrier:"Amazon Shipping",destination:"United Kingdom",qty:27,actual_gbp:117.45},
-    {date:"2026-07-01",carrier:"Evri",destination:"United Kingdom",qty:21,actual_gbp:48.49},
-    {date:"2026-07-01",carrier:"Wayfair",destination:"United Kingdom",qty:16,actual_gbp:null},
-    {date:"2026-07-01",carrier:"Evri",destination:"Germany",qty:14,actual_gbp:81.77},
-    {date:"2026-07-01",carrier:"Evri",destination:"Italy",qty:11,actual_gbp:65.18},
-    {date:"2026-07-01",carrier:"Evri",destination:"France",qty:9,actual_gbp:49.77},
-    {date:"2026-07-01",carrier:"DHL",destination:"France",qty:8,actual_gbp:100.08},
-    {date:"2026-07-01",carrier:"Evri",destination:"Ireland",qty:5,actual_gbp:30.12},
-    {date:"2026-07-01",carrier:"GLS",destination:"Germany",qty:5,actual_gbp:22.70},
-    {date:"2026-07-01",carrier:"DHL",destination:"Italy",qty:5,actual_gbp:62.55},
-    {date:"2026-07-02",carrier:"Royal Mail",destination:"United Kingdom",qty:304,actual_gbp:872.05},
-    {date:"2026-07-02",carrier:"DHL",destination:"Germany",qty:49,actual_gbp:208.65},
-    {date:"2026-07-02",carrier:"Amazon Shipping",destination:"United Kingdom",qty:30,actual_gbp:130.50},
-    {date:"2026-07-02",carrier:"Wayfair",destination:"United Kingdom",qty:20,actual_gbp:null},
-    {date:"2026-07-02",carrier:"Evri",destination:"United Kingdom",qty:19,actual_gbp:42.91},
-    {date:"2026-07-02",carrier:"DPD",destination:"United Kingdom",qty:19,actual_gbp:76.95},
-    {date:"2026-07-02",carrier:"Evri",destination:"Germany",qty:13,actual_gbp:74.36},
-    {date:"2026-07-02",carrier:"Evri",destination:"Italy",qty:8,actual_gbp:49.18},
-    {date:"2026-07-02",carrier:"GLS",destination:"Germany",qty:5,actual_gbp:22.70},
-    {date:"2026-07-03",carrier:"Royal Mail",destination:"United Kingdom",qty:286,actual_gbp:796.08},
-    {date:"2026-07-03",carrier:"DHL",destination:"Germany",qty:48,actual_gbp:220.95},
-    {date:"2026-07-03",carrier:"Amazon Shipping",destination:"United Kingdom",qty:23,actual_gbp:100.05},
-    {date:"2026-07-03",carrier:"Wayfair",destination:"United Kingdom",qty:22,actual_gbp:null},
-    {date:"2026-07-03",carrier:"Evri",destination:"United Kingdom",qty:18,actual_gbp:42.94},
-    {date:"2026-07-03",carrier:"Evri",destination:"Germany",qty:11,actual_gbp:70.12},
-    {date:"2026-07-03",carrier:"Evri",destination:"France",qty:9,actual_gbp:57.18},
-    {date:"2026-07-03",carrier:"DPD",destination:"United Kingdom",qty:9,actual_gbp:36.45},
-    {date:"2026-07-04",carrier:"Royal Mail",destination:"United Kingdom",qty:293,actual_gbp:823.12},
-    {date:"2026-07-04",carrier:"DHL",destination:"Germany",qty:58,actual_gbp:250.50},
-    {date:"2026-07-04",carrier:"Amazon Shipping",destination:"United Kingdom",qty:36,actual_gbp:156.60},
-    {date:"2026-07-04",carrier:"Wayfair",destination:"United Kingdom",qty:19,actual_gbp:null},
-    {date:"2026-07-04",carrier:"Evri",destination:"United Kingdom",qty:15,actual_gbp:35.73},
-    {date:"2026-07-04",carrier:"Evri",destination:"Ireland",qty:7,actual_gbp:38.71},
-    {date:"2026-07-04",carrier:"Evri",destination:"Italy",qty:7,actual_gbp:41.18},
-    {date:"2026-07-04",carrier:"Evri",destination:"Germany",qty:6,actual_gbp:35.65},
-    {date:"2026-07-04",carrier:"DPD",destination:"United Kingdom",qty:5,actual_gbp:20.25},
-    {date:"2026-07-05",carrier:"Royal Mail",destination:"United Kingdom",qty:351,actual_gbp:987.97},
-    {date:"2026-07-05",carrier:"DHL",destination:"Germany",qty:72,actual_gbp:309.15},
-    {date:"2026-07-05",carrier:"Amazon Shipping",destination:"United Kingdom",qty:38,actual_gbp:165.30},
-    {date:"2026-07-05",carrier:"Wayfair",destination:"United Kingdom",qty:29,actual_gbp:null},
-    {date:"2026-07-05",carrier:"Evri",destination:"United Kingdom",qty:15,actual_gbp:34.81},
-    {date:"2026-07-05",carrier:"Evri",destination:"Germany",qty:13,actual_gbp:79.30},
-    {date:"2026-07-05",carrier:"DHL",destination:"France",qty:12,actual_gbp:150.12},
-    {date:"2026-07-05",carrier:"DPD",destination:"United Kingdom",qty:10,actual_gbp:40.50},
-    {date:"2026-07-05",carrier:"DHL",destination:"Italy",qty:7,actual_gbp:87.57},
-    {date:"2026-07-05",carrier:"Evri",destination:"France",qty:6,actual_gbp:35.06},
-    {date:"2026-07-05",carrier:"GLS",destination:"Germany",qty:5,actual_gbp:22.70}
+    {week_label:"W27 2026",date:"2026-06-29",carrier:"Royal Mail",destination:"United Kingdom",qty:353,actual_gbp:970.88,booking_id:"BKG-00001",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-06-29",carrier:"DHL",destination:"Germany",qty:70,actual_gbp:306.75,booking_id:"BKG-00002",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-06-29",carrier:"Amazon Shipping",destination:"United Kingdom",qty:39,actual_gbp:169.65,booking_id:"BKG-00003",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-06-29",carrier:"Evri",destination:"United Kingdom",qty:20,actual_gbp:47.08,booking_id:"BKG-00004",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-06-29",carrier:"Wayfair",destination:"United Kingdom",qty:13,actual_gbp:null,booking_id:"BKG-00005",order_id:"(order batch — see postgres.order_transaction)",status:"3rd-party · no cost"},
+    {week_label:"W27 2026",date:"2026-06-29",carrier:"DPD",destination:"United Kingdom",qty:12,actual_gbp:48.60,booking_id:"BKG-00006",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-06-29",carrier:"Evri",destination:"Ireland",qty:10,actual_gbp:67.65,booking_id:"BKG-00007",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-06-29",carrier:"DHL",destination:"France",qty:7,actual_gbp:87.57,booking_id:"BKG-00008",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-06-29",carrier:"Evri",destination:"Italy",qty:7,actual_gbp:35.65,booking_id:"BKG-00009",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-06-29",carrier:"Evri",destination:"Germany",qty:7,actual_gbp:38.71,booking_id:"BKG-00010",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-06-29",carrier:"GLS",destination:"Germany",qty:5,actual_gbp:22.70,booking_id:"BKG-00011",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-06-30",carrier:"Royal Mail",destination:"United Kingdom",qty:357,actual_gbp:1003.36,booking_id:"BKG-00012",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-06-30",carrier:"DHL",destination:"Germany",qty:53,actual_gbp:232.35,booking_id:"BKG-00013",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-06-30",carrier:"Amazon Shipping",destination:"United Kingdom",qty:30,actual_gbp:130.50,booking_id:"BKG-00014",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-06-30",carrier:"Evri",destination:"United Kingdom",qty:24,actual_gbp:55.32,booking_id:"BKG-00015",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-06-30",carrier:"DPD",destination:"United Kingdom",qty:20,actual_gbp:81.00,booking_id:"BKG-00016",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-06-30",carrier:"Wayfair",destination:"United Kingdom",qty:18,actual_gbp:null,booking_id:"BKG-00017",order_id:"(order batch — see postgres.order_transaction)",status:"3rd-party · no cost"},
+    {week_label:"W27 2026",date:"2026-06-30",carrier:"Evri",destination:"Italy",qty:10,actual_gbp:65.18,booking_id:"BKG-00018",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-06-30",carrier:"Evri",destination:"Germany",qty:9,actual_gbp:52.24,booking_id:"BKG-00019",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-06-30",carrier:"Evri",destination:"France",qty:9,actual_gbp:49.18,booking_id:"BKG-00020",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-06-30",carrier:"DHL",destination:"Italy",qty:6,actual_gbp:75.06,booking_id:"BKG-00021",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-06-30",carrier:"DHL",destination:"France",qty:6,actual_gbp:75.06,booking_id:"BKG-00022",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-06-30",carrier:"GLS",destination:"Germany",qty:5,actual_gbp:22.70,booking_id:"BKG-00023",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-01",carrier:"Royal Mail",destination:"United Kingdom",qty:321,actual_gbp:923.75,booking_id:"BKG-00024",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-01",carrier:"DHL",destination:"Germany",qty:67,actual_gbp:296.40,booking_id:"BKG-00025",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-01",carrier:"Amazon Shipping",destination:"United Kingdom",qty:27,actual_gbp:117.45,booking_id:"BKG-00026",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-01",carrier:"Evri",destination:"United Kingdom",qty:21,actual_gbp:48.49,booking_id:"BKG-00027",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-01",carrier:"Wayfair",destination:"United Kingdom",qty:16,actual_gbp:null,booking_id:"BKG-00028",order_id:"(order batch — see postgres.order_transaction)",status:"3rd-party · no cost"},
+    {week_label:"W27 2026",date:"2026-07-01",carrier:"Evri",destination:"Germany",qty:14,actual_gbp:81.77,booking_id:"BKG-00029",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-01",carrier:"Evri",destination:"Italy",qty:11,actual_gbp:65.18,booking_id:"BKG-00030",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-01",carrier:"Evri",destination:"France",qty:9,actual_gbp:49.77,booking_id:"BKG-00031",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-01",carrier:"DHL",destination:"France",qty:8,actual_gbp:100.08,booking_id:"BKG-00032",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-01",carrier:"Evri",destination:"Ireland",qty:5,actual_gbp:30.12,booking_id:"BKG-00033",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-01",carrier:"GLS",destination:"Germany",qty:5,actual_gbp:22.70,booking_id:"BKG-00034",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-01",carrier:"DHL",destination:"Italy",qty:5,actual_gbp:62.55,booking_id:"BKG-00035",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-02",carrier:"Royal Mail",destination:"United Kingdom",qty:304,actual_gbp:872.05,booking_id:"BKG-00036",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-02",carrier:"DHL",destination:"Germany",qty:49,actual_gbp:208.65,booking_id:"BKG-00037",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-02",carrier:"Amazon Shipping",destination:"United Kingdom",qty:30,actual_gbp:130.50,booking_id:"BKG-00038",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-02",carrier:"Wayfair",destination:"United Kingdom",qty:20,actual_gbp:null,booking_id:"BKG-00039",order_id:"(order batch — see postgres.order_transaction)",status:"3rd-party · no cost"},
+    {week_label:"W27 2026",date:"2026-07-02",carrier:"Evri",destination:"United Kingdom",qty:19,actual_gbp:42.91,booking_id:"BKG-00040",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-02",carrier:"DPD",destination:"United Kingdom",qty:19,actual_gbp:76.95,booking_id:"BKG-00041",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-02",carrier:"Evri",destination:"Germany",qty:13,actual_gbp:74.36,booking_id:"BKG-00042",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-02",carrier:"Evri",destination:"Italy",qty:8,actual_gbp:49.18,booking_id:"BKG-00043",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-02",carrier:"GLS",destination:"Germany",qty:5,actual_gbp:22.70,booking_id:"BKG-00044",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-03",carrier:"Royal Mail",destination:"United Kingdom",qty:286,actual_gbp:796.08,booking_id:"BKG-00045",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-03",carrier:"DHL",destination:"Germany",qty:48,actual_gbp:220.95,booking_id:"BKG-00046",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-03",carrier:"Amazon Shipping",destination:"United Kingdom",qty:23,actual_gbp:100.05,booking_id:"BKG-00047",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-03",carrier:"Wayfair",destination:"United Kingdom",qty:22,actual_gbp:null,booking_id:"BKG-00048",order_id:"(order batch — see postgres.order_transaction)",status:"3rd-party · no cost"},
+    {week_label:"W27 2026",date:"2026-07-03",carrier:"Evri",destination:"United Kingdom",qty:18,actual_gbp:42.94,booking_id:"BKG-00049",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-03",carrier:"Evri",destination:"Germany",qty:11,actual_gbp:70.12,booking_id:"BKG-00050",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-03",carrier:"Evri",destination:"France",qty:9,actual_gbp:57.18,booking_id:"BKG-00051",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-03",carrier:"DPD",destination:"United Kingdom",qty:9,actual_gbp:36.45,booking_id:"BKG-00052",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-04",carrier:"Royal Mail",destination:"United Kingdom",qty:293,actual_gbp:823.12,booking_id:"BKG-00053",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-04",carrier:"DHL",destination:"Germany",qty:58,actual_gbp:250.50,booking_id:"BKG-00054",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-04",carrier:"Amazon Shipping",destination:"United Kingdom",qty:36,actual_gbp:156.60,booking_id:"BKG-00055",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-04",carrier:"Wayfair",destination:"United Kingdom",qty:19,actual_gbp:null,booking_id:"BKG-00056",order_id:"(order batch — see postgres.order_transaction)",status:"3rd-party · no cost"},
+    {week_label:"W27 2026",date:"2026-07-04",carrier:"Evri",destination:"United Kingdom",qty:15,actual_gbp:35.73,booking_id:"BKG-00057",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-04",carrier:"Evri",destination:"Ireland",qty:7,actual_gbp:38.71,booking_id:"BKG-00058",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-04",carrier:"Evri",destination:"Italy",qty:7,actual_gbp:41.18,booking_id:"BKG-00059",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-04",carrier:"Evri",destination:"Germany",qty:6,actual_gbp:35.65,booking_id:"BKG-00060",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-04",carrier:"DPD",destination:"United Kingdom",qty:5,actual_gbp:20.25,booking_id:"BKG-00061",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-05",carrier:"Royal Mail",destination:"United Kingdom",qty:351,actual_gbp:987.97,booking_id:"BKG-00062",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-05",carrier:"DHL",destination:"Germany",qty:72,actual_gbp:309.15,booking_id:"BKG-00063",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-05",carrier:"Amazon Shipping",destination:"United Kingdom",qty:38,actual_gbp:165.30,booking_id:"BKG-00064",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-05",carrier:"Wayfair",destination:"United Kingdom",qty:29,actual_gbp:null,booking_id:"BKG-00065",order_id:"(order batch — see postgres.order_transaction)",status:"3rd-party · no cost"},
+    {week_label:"W27 2026",date:"2026-07-05",carrier:"Evri",destination:"United Kingdom",qty:15,actual_gbp:34.81,booking_id:"BKG-00066",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-05",carrier:"Evri",destination:"Germany",qty:13,actual_gbp:79.30,booking_id:"BKG-00067",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-05",carrier:"DHL",destination:"France",qty:12,actual_gbp:150.12,booking_id:"BKG-00068",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-05",carrier:"DPD",destination:"United Kingdom",qty:10,actual_gbp:40.50,booking_id:"BKG-00069",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-05",carrier:"DHL",destination:"Italy",qty:7,actual_gbp:87.57,booking_id:"BKG-00070",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-05",carrier:"Evri",destination:"France",qty:6,actual_gbp:35.06,booking_id:"BKG-00071",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"},
+    {week_label:"W27 2026",date:"2026-07-05",carrier:"GLS",destination:"Germany",qty:5,actual_gbp:22.70,booking_id:"BKG-00072",order_id:"(order batch — see postgres.order_transaction)",status:"Booked"}
   ],
   weeklyTrend:[
     {iso_week:"W22",orders:3691},{iso_week:"W23",orders:4425},{iso_week:"W24",orders:4249},
     {iso_week:"W25",orders:3681},{iso_week:"W26",orders:3513},{iso_week:"W27",orders:4020}
   ],
   serviceProxies:[{proxy:"MANUAL OM",orders:51},{proxy:"REPLACEMENT",orders:7},{proxy:"RESEND",orders:2}],
+  // Return Label In (README Section 21) — VERIFIED against PostgreSQL, W27 2026.
+  // Amazon: public.amazon_returns (fulfilment='fbm', label_type='AmazonPrePaidLabel') -> 110 labels, label_cost present.
+  // eBay  : public.ebay_returns  -> 79 distinct return_id, of which 39 carry a carrier (= label evidence).
+  //         public.ebay_order_expenses SHIPPING_LABEL -> only 1 billed fee row in W27 (fee ingestion incomplete).
+  // Shopify: public.shopify_returns has NO label field (refunds only) -> 14 rows EXCLUDED from KPI 31.
+  // Excluded: 29 FBA returns (README S1 out of scope); 30 AmazonUnPaidLabel (customer-paid, not billed to us).
+  // Return Label Out still requires public.shipment.label_type (ABSENT) -> figure remains a LOWER BOUND.
+  // Costs mix GBP/EUR/USD with no FX table -> shown per source, deliberately NOT summed.
+  returnLabels:{
+    week_label:"W27 2026",
+    return_label_in:149,              // 110 Amazon prepaid + 39 eBay label-evidenced
+    customer_order_labels:3631,
+    return_rate:0.0410,               // 149 / 3631
+    alt_billed_only:{labels:111, rate:0.0306},   // Amazon 110 + eBay billed fee 1
+    alt_orders_denominator:{orders:4020, rate:0.0371},
+    return_label_out:null,            // needs shipment.label_type
+    excluded:{fba_returns:29, amazon_unpaid_labels:30, shopify_refunds_no_label:14},
+    rows:[
+      {source:"Amazon FBM · AmazonPrePaidLabel",tbl:"public.amazon_returns",labels:110,cost:382.68,ccy:"GBP/EUR/USD",basis:"label_type + label_cost + rd_carrier present"},
+      {source:"eBay · return with carrier (label evidence)",tbl:"public.ebay_returns",labels:39,cost:null,ccy:"—",basis:"39 of 79 distinct return_id have carrier; label cost NOT stored"},
+      {source:"eBay · billed SHIPPING_LABEL fee",tbl:"public.ebay_order_expenses",labels:1,cost:3.06,ccy:"GBP",basis:"billing evidence only — fee ingestion incomplete vs 39 labels"},
+      {source:"Shopify refunds — EXCLUDED (no label)",tbl:"public.shopify_returns",labels:0,cost:null,ccy:"—",basis:"refund_amount only; no label field -> not a Return Label In"},
+      {source:"Return Label Out — UNAVAILABLE",tbl:"public.shipment (ABSENT)",labels:null,cost:null,ccy:"—",basis:"requires label_type column"}
+    ]
+  },
   lookups:{
+    // Sheet 8 Lists — verbatim from README (Sections 4, 7, 19, 21). Source of every dropdown.
     carriers:["Royal Mail","DHL","Evri","Amazon Shipping","USPS","DPD","GLS","Smart Track","Wayfair","Others"],
     statuses:["Open","Investigating","Chase carrier","Credit expected","Recovered","Closed","Killed"],
-    issueTypes:["Relabelling","Surcharge applied","Volumetric reweigh","Wrong zone billed","Format reclass","Rate drift vs baseline","Unmapped carrier (KILL)","Missing invoice","Duplicate billing"]
+    issueTypes:["Relabelling","Surcharge applied","Volumetric reweigh","Wrong zone billed","Format reclass","Service tier mismatch","Missing invoice","Duplicate billing","Unmapped carrier","Manual entry gap","Replacement label not invoiced","Collection label not invoiced","Service label rate mismatch","Repeat replacement (3+) for one order","Return label rate mismatch","Return label not invoiced (marketplace)"],
+    labelTypes:["Customer Order","Replacement Out","Missing Part Out","Collection In","Return Label In","Return Label Out","Other Service"],
+    destinations:["UK Domestic","DE Domestic","DE","FR","IE","IT","ES","NL","BE","AT","PL","SE","CH","PT","US Domestic","Cyprus","Malta","Croatia","Denmark","Iceland","Greece","Hungary","Norway"],
+    weightBands:["0.5kg","1kg","2kg","3kg","5kg","10kg","15kg","30kg","n/a"],
+    owners:["TBD — Royal Mail","TBD — DHL","TBD — Evri","TBD — Amazon Shipping","TBD — USPS","TBD — DPD","TBD — GLS","TBD — Smart Track","TBD — Wayfair","TBD — Others / kill"]
   },
   blos:{
     "postage.leakage_pct_max":0.01,"postage.leakage_trigger_gbp":5.00,"postage.others_share_max":0.02,
@@ -324,10 +585,22 @@ const dashboardData = {
   },
   metadata:{
     source:"PostgreSQL via Claude MCP (read-only)", as_of:"2026-07-08",
-    tables:["public.order_transaction","public.order_shipping_billing_detail"],
+    tables:["public.order_transaction","public.order_shipping_billing_detail","public.amazon_returns","blos.postage (empty)"],
     financial_basis:"Actual £ = carrier_charge (reliable). Expected £ = prior-8-week (W19–W26) avg carrier_charge per carrier × labels (README 'default per carrier' fallback). shipping_template_price is 67% zero and is NOT used.",
     carrier_mapping:"heuristic classification of free-text carrier_name",
-    gaps:["label_type (service/return split)","service_tier","weight_band","destination_zone","rate card (expected uses 8-week baseline)","invoice ingestion","dispute/recovery tables","BLOS API"]
+    gaps:["label_type (public.shipment absent) -> Replacement/Missing Part/Collection/Return-Label-Out/Other Service NOT identifiable; Service spend %, Service ratio = N/A",
+      "service_tier / weight_band_kg / destination_zone columns absent on order_shipping_billing_detail -> Booking Log grain reduced",
+      "RATE CARD: blos.postage EXISTS (postage_type, destination_zone, weight_from/to, weight_unit, postage_value) and blos.postage_history EXISTS, but BOTH HAVE 0 ROWS -> Forecast £ = Qty x Rate x (1+VAT%) not computable. Backfill/ETL required, NOT a schema change.",
+      "invoice_received_amount/date/batch_id absent -> Invoice £ uses carrier_charge",
+      "dispute/recovery table absent -> Recovery rate, Days Open lifecycle, Credit Recovered £ = N/A",
+      "BLOS API not live -> threshold VALUES read from workbook (blos.postage tables exist but are empty)",
+      "RETURN LABEL IN: AVAILABLE via public.amazon_returns (110) + public.ebay_returns (39 label-evidenced). README Section 21 mapping is WRONG: ebay_order_expenses.transaction_memo does not exist and amz_refund_expenses does not exist; the real tables are amazon_returns / ebay_returns.",
+      "eBay return-label FEE ingestion incomplete: 39 labels evidenced but only 1 SHIPPING_LABEL fee row in W27.",
+      "public.shopify_returns holds refunds only (no label field) -> correctly excluded from KPI 31.",
+      "Return Label Out still needs shipment.label_type -> Return rate 4.10% is a LOWER BOUND",
+      "iso_week_number / iso_week_year columns absent (README Section 20 production rule) -> week label derived at query time",
+      "carrier_name is free text -> carrier_family is a documented heuristic (no normalisation table)",
+      "carrier_charge mixes GBP+EUR (return label_cost mixes GBP/EUR/USD) with no FX table"]
   }
 };
 
@@ -337,7 +610,7 @@ const dashboardData = {
 const TABS=[{id:"dashboard",label:"Dashboard"},{id:"daily",label:"Daily Control"},{id:"weekly",label:"Weekly Invoice Check"},
   {id:"leakage",label:"Leakage Register"},{id:"booking",label:"Booking Log"},{id:"ratecard",label:"Rate Card"},{id:"reference",label:"Reference"}];
 const state={tab:"dashboard",theme:localStorage.getItem("prd_theme")||"light",
-  filters:{carrier:"",destination:"",week:""},sort:{},search:{}};
+  filters:{carrier:"",destination:"",week:"",status:"",issue:""},sort:{},search:{}};
 
 const gbp=v=>(v===null||v===undefined)?'<span class="muted">—</span>':'£'+Number(v).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});
 const gbp0=v=>(v===null||v===undefined)?'—':'£'+Number(v).toLocaleString('en-GB',{maximumFractionDigits:0});
@@ -370,24 +643,40 @@ function renderTable(o){
 function applyFilters(rows){const f=state.filters;return rows.filter(r=>{
   if(f.carrier&&r.carrier!==f.carrier)return false;
   if(f.destination&&r.destination!==undefined&&r.destination!==f.destination)return false;
-  if(f.week&&r.week_label!==undefined&&r.week_label!==f.week)return false;return true;});}
+  if(f.week&&r.week_label!==undefined&&r.week_label!==f.week)return false;
+  if(f.status&&r.status!==undefined&&r.status!==f.status)return false;
+  if(f.issue&&r.issue_type!==undefined&&r.issue_type!==f.issue)return false;return true;});}
 
-function card(label,value,sub,cls,mini){return '<div class="card '+(cls||'')+'"><div class="k-label">'+esc(label)+'</div><div class="k-value">'+value+'</div>'+(mini?'<div class="k-mini">'+mini+'</div>':'')+(sub?'<div class="k-sub">'+esc(sub)+'</div>':'')+'</div>';}
+/* --- README-required field present but no PostgreSQL source -> render em dash, never invent --- */
+const txt=v=>(v===null||v===undefined||v==='')?'<span class="muted">—</span>':esc(v);
+const BLOS=()=>dashboardData.blos;
+/* KPI Target + PASS/FAIL derived from the BLOS object via blos_key.
+   No threshold is hardcoded in the render (README audit check #2). */
+function kpiTarget(r){return r.row===23?0:BLOS()[r.blos_key];}
+function kpiStatus(r){
+  if(r.actual===null||r.actual===undefined)return "N/A";
+  const t=BLOS()[r.blos_key];
+  if(r.row===23)return (r.actual===0||r.actual<t)?"PASS":"FAIL";
+  return r.direction==="higher"?(r.actual>=t?"PASS":"FAIL"):(r.actual<=t?"PASS":"FAIL");
+}
+const fmtBy=(v,f)=>v===null||v===undefined?'<span class="muted">—</span>':(f==='pct'?pct(v):(f==='gbp'?gbp(v):num(v)));
+
+function card(label,value,sub,cls){return '<div class="card '+(cls||'')+'"><div class="k-label">'+esc(label)+'</div><div class="k-value">'+value+'</div><div class="k-sub">'+(sub||'')+'</div></div>';}
 
 function pageDashboard(){
   const o=dashboardData.overview;
   const cards=[
-    card("Actual Postage Cost",gbp(o.actual_cost_gbp),"carrier_charge · week","c-cost"),
-    card("Expected (baseline)",gbp(o.expected_cost_gbp),"8-week avg rate × labels","c-cost"),
-    card("Cost Variance",sGbp(o.variance_gbp),"vs 8-week baseline",o.variance_gbp<=0?"c-ok":"c-warn",sPct(o.variance_pct)),
-    card("Avg £ / Label",rate(o.avg_cost_per_label),"across "+num(o.labels)+" labels","c-cost"),
-    card("Bookings (labels)",num(o.labels),"shipments this week",""),
-    card("Total Orders",num(o.total_orders),"completed orders",""),
-    card("Self-Labelled",num(o.self_labelled),"excl. FBA ("+o.fba_excluded+") & Wayfair ("+o.wayfair+")",""),
-    card("Daily Recon Accuracy",pct(o.daily_recon_accuracy),"7/7 days · gap = 0","c-ok")
+    card("Total Orders",num(o.total_orders),"completed · week"),
+    card("Self-Labelled",num(o.self_labelled),"excl. FBA + Wayfair"),
+    card("Bookings",num(o.labels),"labels shipped"),
+    card("Actual Cost",gbp(o.actual_cost_gbp),"carrier_charge","c-cost"),
+    card("Expected",gbp(o.expected_cost_gbp),"8-wk baseline","c-cost"),
+    card("Variance",sGbp(o.variance_gbp),sPct(o.variance_pct)+" vs baseline",o.variance_gbp<=0?"c-ok":"c-warn"),
+    card("Open Disputes",num(o.open_disputes),gbp0(o.leakage_gbp)+" flagged","c-warn"),
+    card("Daily Recon",pct(o.daily_recon_accuracy),"7/7 · gap 0","c-ok")
   ].join('');
   const cs=applyFilters(dashboardData.carrierSummary);
-  const t=sum=>cs.reduce((a,r)=>a+(r[sum]||0),0);
+  const t=k=>cs.reduce((a,r)=>a+(r[k]||0),0);
   const totalRow={carrier:'<b>TOTAL</b>',labels:num(t('labels')),expected_gbp:gbp(t('expected_gbp')),actual_gbp:gbp(t('actual_gbp')),
     variance_gbp:sGbp(t('actual_gbp')-t('expected_gbp')),variance_pct:'',status:'',owner:''};
   const csTable=renderTable({key:"carrierSummary",title:"Weekly Carrier Summary — "+o.reporting_week,rows:cs,totalRow,
@@ -395,88 +684,161 @@ function pageDashboard(){
       {k:"expected_gbp",label:"Expected £",cls:"num",fmt:gbp},{k:"actual_gbp",label:"Actual £",cls:"num",fmt:gbp},
       {k:"variance_gbp",label:"Variance £",cls:"num",html:r=>sGbp(r.variance_gbp)},{k:"variance_pct",label:"Var %",cls:"num",html:r=>sPct(r.variance_pct)},
       {k:"status",label:"Status",html:r=>statusPill(r.status)},{k:"owner",label:"Owner",html:r=>'<span class="muted">'+esc(r.owner)+'</span>'}]});
-  const kpiTable=renderTable({key:"kpis",title:"Mandatory KPIs · targets from BLOS",search:false,rows:dashboardData.kpis,
-    columns:[{k:"kpi",label:"KPI"},
-      {k:"target",label:"Target",cls:"num",html:r=>r.fmt==='pct'?pct(r.target):(r.fmt==='gbp'?gbp(r.target):num(r.target))},
-      {k:"actual",label:"Actual",cls:"num",html:r=>r.actual===null?'<span class="muted">—</span>':(r.fmt==='pct'?pct(r.actual):(r.fmt==='gbp'?gbp(r.actual):num(r.actual)))},
+  const kpiTable=renderTable({key:"kpis",title:"Mandatory KPIs · targets read from BLOS (rows 22-31)",search:false,rows:dashboardData.kpis,
+    columns:[{k:"row",label:"#",cls:"num"},{k:"kpi",label:"KPI"},
+      {k:"target",label:"Target",cls:"num",html:r=>fmtBy(kpiTarget(r),r.fmt)},
+      {k:"actual",label:"Actual",cls:"num",html:r=>fmtBy(r.actual,r.fmt)},
       {k:"blos_key",label:"BLOS Key",html:r=>'<span class="muted">'+esc(r.blos_key)+'</span>'},
-      {k:"status",label:"Status",html:r=>kpiPill(r.status)},{k:"note",label:"Note",html:r=>'<span class="muted">'+esc(r.note)+'</span>'}]});
-  // mini daily cost bar chart
+      {k:"status",label:"Status",html:r=>kpiPill(kpiStatus(r))},
+      {k:"note",label:"Note",html:r=>'<span class="muted">'+esc(r.note)+'</span>'}]});
   const dmax=Math.max(...dashboardData.dailyControl.map(d=>d.actual_gbp));
   const bars='<div class="bars">'+dashboardData.dailyControl.map(d=>{
-    const h=Math.round(d.actual_gbp/dmax*100);
-    return '<div class="bar"><div class="bv">'+gbp0(d.actual_gbp)+'</div><div class="col" style="height:'+h+'%"></div><div class="bl">'+d.date.slice(5)+'</div></div>';}).join('')+'</div>';
-  return '<div class="note"><b>Corrected data model.</b> <b>Actual £</b> is the real carrier charge (<code>carrier_charge</code>). '
-    +'<b>Expected £</b> is the prior-8-week average rate per carrier × this week\'s labels (the workbook\'s documented "default per carrier" fallback, since no rate-card table exists). '
-    +'Variance flags carriers charging above/below their recent norm. Counts are authoritative.</div>'
+    const hh=Math.round(d.actual_gbp/dmax*100);
+    return '<div class="bar"><div class="bv">'+gbp0(d.actual_gbp)+'</div><div class="col" style="height:'+hh+'%"></div><div class="bl">'+d.date.slice(5)+'</div></div>';}).join('')+'</div>';
+  return '<div class="note"><b>Corrected data model.</b> <b>Actual £</b> = real carrier charge (<code>carrier_charge</code>). '
+    +'<b>Expected £</b> = prior-8-week average rate per carrier × this week\'s labels — the README Section-15 "<i>fall back to a default per carrier</i>" rule, since no rate-card table exists. '
+    +'KPI targets are read from the BLOS object (no hardcoded thresholds). Fields with no PostgreSQL source render “—”.</div>'
     +'<div class="cards">'+cards+'</div>'
     +'<h2 class="sec">Daily Postage Cost · '+esc(o.week_range)+'</h2>'+bars
     +'<h2 class="sec">Weekly Carrier Summary</h2>'+csTable
     +'<h2 class="sec">Mandatory KPIs</h2>'+kpiTable;
 }
+
 function pageDaily(){
   const rows=applyFilters(dashboardData.dailyControl);
   const s=k=>rows.reduce((a,r)=>a+(r[k]||0),0);
   const totalRow={date:'<b>WEEKLY TOTAL</b>',total_orders:num(s('total_orders')),fba_excluded:num(s('fba_excluded')),
-    wayfair:num(s('wayfair')),self_labelled:num(s('self_labelled')),labels:num(s('labels')),gap:num(s('gap')),actual_gbp:gbp(s('actual_gbp')),avg_rate:'',closure:''};
-  const t=renderTable({key:"dailyControl",title:"Daily Control — orders → labels → cost",rows,totalRow,
-    columns:[{k:"date",label:"Date",html:r=>fmtDate(r.date)},{k:"total_orders",label:"Total Orders",cls:"num",fmt:num},
-      {k:"fba_excluded",label:"FBA Excl.",cls:"num",fmt:num},{k:"wayfair",label:"Wayfair",cls:"num",fmt:num},
-      {k:"self_labelled",label:"Self-Labelled",cls:"num",fmt:num},{k:"labels",label:"Labels in BL",cls:"num",fmt:num},
-      {k:"gap",label:"Gap",cls:"num",fmt:num},{k:"actual_gbp",label:"Actual Cost £",cls:"num",fmt:gbp},
-      {k:"avg_rate",label:"Avg £/Label",cls:"num",fmt:rate},{k:"closure",label:"Closure",html:r=>'<span class="pill ok">'+esc(r.closure)+'</span>'}]});
-  return '<div class="note">Workbook rule: <b>Total Orders = FBA + Wayfair + Self-Labelled</b>; <b>Gap = (Self-Labelled + Wayfair) − Labels</b>. All 7 days reconcile (Gap = 0). '
-    +'£ column is real actual postage cost (<code>carrier_charge</code>). Service-side columns need <code>label_type</code> (not in DB).</div>'+t;
+    wayfair:num(s('wayfair')),self_labelled:num(s('self_labelled')),labels:num(s('labels')),gap:num(s('gap')),actual_gbp:gbp(s('actual_gbp'))};
+  const t=renderTable({key:"dailyControl",title:"Daily Control — Sheet 2 (cols A–Q)",rows,totalRow,
+    columns:[{k:"date",label:"Date (A)",html:r=>fmtDate(r.date)},
+      {k:"week_label",label:"Week Label (Q)"},
+      {k:"total_orders",label:"Total Orders (B)",cls:"num",fmt:num},
+      {k:"fba_excluded",label:"FBA Excl. (C)",cls:"num",fmt:num},
+      {k:"wayfair",label:"Wayfair (D)",cls:"num",fmt:num},
+      {k:"self_labelled",label:"Self-Labelled (E)",cls:"num",fmt:num},
+      {k:"labels",label:"Labels in BL (F)",cls:"num",fmt:num},
+      {k:"gap",label:"Gap (G)",cls:"num",fmt:num},
+      {k:"forecast_inc_vat",label:"Forecast £ Inc VAT (H)",cls:"num",html:r=>txt(r.forecast_inc_vat)},
+      {k:"actual_gbp",label:"Actual Cost £ ⌁",cls:"num",fmt:gbp},
+      {k:"service_expected",label:"Svc Labels exp (M)",cls:"num",html:r=>txt(r.service_expected)},
+      {k:"service_in_bl",label:"Svc in BL (N)",cls:"num",html:r=>txt(r.service_in_bl)},
+      {k:"service_gap",label:"Svc Gap (O)",cls:"num",html:r=>txt(r.service_gap)},
+      {k:"service_forecast_gbp",label:"Svc Forecast £ (P)",cls:"num",html:r=>txt(r.service_forecast_gbp)},
+      {k:"closure",label:"Closure (I)",html:r=>'<span class="pill ok">'+esc(r.closure)+'</span>'},
+      {k:"closed_by",label:"Closed By (J)",html:r=>txt(r.closed_by)},
+      {k:"notes",label:"Notes (K)",html:r=>txt(r.notes)}]});
+  return '<div class="note">README rule: <b>Total Orders = FBA + Wayfair + Self-Labelled</b>; <b>Gap = (Self-Labelled + Wayfair) − Labels in BL</b>. All 7 days reconcile (Gap = 0). '
+    +'<b>⌁ Actual Cost £</b> is <code>carrier_charge</code> (a DB column, not a README field). '
+    +'<b>Forecast £ (H)</b> needs the rate card, and the <b>service side (M–P)</b> needs <code>label_type</code> — neither exists in PostgreSQL, so they render “—”. '
+    +'Consequently closure is verified on the <b>customer side only</b>; the v3.1 service-gap condition cannot be evaluated.</div>'+t;
 }
+
 function pageWeekly(){
-  const rows=applyFilters(dashboardData.carrierSummary).map(r=>({...r,week_label:"W27 2026"}));
-  const t=renderTable({key:"weekly",title:"Weekly Invoice Check — "+dashboardData.overview.reporting_week,rows,
-    columns:[{k:"carrier",label:"Carrier"},{k:"labels",label:"Labels",cls:"num",fmt:num},
-      {k:"baseline_rate",label:"Baseline £/lbl",cls:"num",fmt:rate},{k:"avg_rate",label:"Actual £/lbl",cls:"num",fmt:rate},
-      {k:"expected_gbp",label:"Expected £",cls:"num",fmt:gbp},{k:"actual_gbp",label:"Actual £",cls:"num",fmt:gbp},
-      {k:"variance_gbp",label:"Variance £",cls:"num",html:r=>sGbp(r.variance_gbp)},{k:"variance_pct",label:"Var %",cls:"num",html:r=>sPct(r.variance_pct)},
-      {k:"status",label:"Status",html:r=>statusPill(r.status)}]});
-  return '<div class="note"><b>Actual £/lbl</b> = this week\'s avg carrier charge; <b>Baseline £/lbl</b> = prior-8-week avg. '
-    +'Status uses the workbook rule (trigger £5, leakage 1%; Others → KILL). DHL is charging +3.3% above its baseline → LEAK.</div>'+t;
+  const rows=applyFilters(dashboardData.carrierSummary);
+  const t=renderTable({key:"weekly",title:"Weekly Invoice Check — Sheet 5 (cols A–P)",rows,
+    columns:[{k:"week_start",label:"Week Start (A)",html:r=>fmtDate(r.week_start)},
+      {k:"week_end",label:"Week End (B)",html:r=>fmtDate(r.week_end)},
+      {k:"week_label",label:"Week Label (P)"},
+      {k:"carrier",label:"Carrier (C)"},
+      {k:"labels",label:"Labels (D)",cls:"num",fmt:num},
+      {k:"forecast_ex_vat",label:"Forecast £ Ex VAT (E)",cls:"num",html:r=>txt(r.forecast_ex_vat)},
+      {k:"expected_gbp",label:"Expected £ (F) ⌁",cls:"num",fmt:gbp},
+      {k:"actual_gbp",label:"Invoice £ (G) ⌁",cls:"num",fmt:gbp},
+      {k:"variance_gbp",label:"Variance £ (H)",cls:"num",html:r=>sGbp(r.variance_gbp)},
+      {k:"variance_pct",label:"Var % (I)",cls:"num",html:r=>sPct(r.variance_pct)},
+      {k:"status",label:"Status (J)",html:r=>statusPill(r.status)},
+      {k:"owner",label:"Owner (K)",html:r=>'<span class="muted">'+esc(r.owner)+'</span>'},
+      {k:"customer_labels",label:"Customer Labels (L)",cls:"num",html:r=>txt(r.customer_labels)},
+      {k:"service_labels",label:"Service Labels (M)",cls:"num",html:r=>txt(r.service_labels)},
+      {k:"customer_gbp",label:"Customer £ (N)",cls:"num",html:r=>txt(r.customer_gbp)},
+      {k:"service_gbp",label:"Service £ (O)",cls:"num",html:r=>txt(r.service_gbp)}]});
+  return '<div class="note">Status uses the README rule (Others→KILL · |Var £|≥trigger AND |Var %|>pct→LEAK · |Var £|≥trigger→CHECK · else OK), thresholds read from BLOS. '
+    +'<b>⌁</b> Expected £ is the 8-week baseline (no rate card) and Invoice £ is <code>carrier_charge</code> (invoice ingestion absent). '
+    +'Forecast Ex VAT (E) and the customer/service split (L–O) need the rate card and <code>label_type</code> — “—”.</div>'+t;
 }
+
 function pageLeakage(){
-  const rows=dashboardData.leakageRegister;
-  const t=renderTable({key:"leakage",title:"Leakage Register — auto-flagged (derived baseline)",search:false,rows,
-    emptyMsg:'No flagged rows.',
-    columns:[{k:"gap_id",label:"Gap ID"},{k:"date_raised",label:"Raised",html:r=>fmtDate(r.date_raised)},{k:"carrier",label:"Carrier"},
-      {k:"issue_type",label:"Issue Type"},{k:"expected_gbp",label:"Expected £",cls:"num",fmt:gbp},{k:"actual_gbp",label:"Actual £",cls:"num",fmt:gbp},
-      {k:"leakage_gbp",label:"£ Leakage",cls:"num",fmt:gbp},{k:"days_open",label:"Days Open",cls:"num",fmt:num},
-      {k:"status",label:"Status",html:r=>'<span class="pill '+(r.status==='Killed'?'kill':'check')+'">'+esc(r.status)+'</span>'},
-      {k:"owner",label:"Owner",html:r=>'<span class="muted">'+esc(r.owner)+'</span>'}]});
-  const detail=rows.map(r=>'<div class="note" style="border-left-color:var(--check)"><b>'+esc(r.gap_id)+' · '+esc(r.carrier)+'</b> — '+esc(r.basis)+'</div>').join('');
-  return '<div class="note">Rows are <b>auto-flagged from the cost-variance check</b> (Actual vs 8-week baseline): carriers over the BLOS threshold, plus Others (KILL). '
-    +'True dispute/recovery tracking (recovery £, credit dates) needs a dispute table — not in the DB yet.</div>'+t+'<h2 class="sec">Flag detail</h2>'+detail;
+  const rows=applyFilters(dashboardData.leakageRegister);
+  const t=renderTable({key:"leakage",title:"Leakage Register — Sheet 6 (cols A–P)",search:false,rows,
+    emptyMsg:'No rows match the current filters.',
+    columns:[{k:"gap_id",label:"Gap ID (A)"},
+      {k:"date_raised",label:"Date Raised (B)",html:r=>fmtDate(r.date_raised)},
+      {k:"week_start",label:"Week Start (C)",html:r=>fmtDate(r.week_start)},
+      {k:"week_label",label:"Week Label (P)"},
+      {k:"carrier",label:"Carrier (D)"},
+      {k:"issue_type",label:"Issue Type (E)",html:r=>r.issue_type?esc(r.issue_type):'<span class="muted">— uncategorised</span>'},
+      {k:"trigger_source",label:"Trigger Source (F)",html:r=>txt(r.trigger_source)},
+      {k:"expected_gbp",label:"Forecast £ (G) ⌁",cls:"num",fmt:gbp},
+      {k:"actual_gbp",label:"Invoice £ (H) ⌁",cls:"num",fmt:gbp},
+      {k:"leakage_gbp",label:"£ Leakage (I)",cls:"num",fmt:gbp},
+      {k:"days_open",label:"Days Open (J)",cls:"num",fmt:num},
+      {k:"owner",label:"Owner (K)",html:r=>'<span class="muted">'+esc(r.owner)+'</span>'},
+      {k:"root_cause",label:"Root Cause / Notes (L)",html:r=>txt(r.root_cause)},
+      {k:"status",label:"Status (M)",html:r=>'<span class="pill '+(r.status==='Killed'?'kill':'check')+'">'+esc(r.status)+'</span>'},
+      {k:"credit_recovered_gbp",label:"Credit Recovered £ (N)",cls:"num",html:r=>txt(r.credit_recovered_gbp)},
+      {k:"label_type",label:"Label Type (O)",html:r=>txt(r.label_type)}]});
+  return '<div class="note">Rows are <b>auto-flagged</b> from the cost-variance check (README Section 6 step 5). '
+    +'<b>Issue Type (E) must come from Lists</b> — GAP-W27-01 has not been investigated, so it is left <i>uncategorised</i> (README-permitted NULL) rather than given an invented classification. '
+    +'<b>Credit Recovered £ (N)</b> is manual-entry with no PostgreSQL source, so <b>Recovery rate is not computable</b> (KPI 25 = N/A). Label Type (O) needs <code>label_type</code>.</div>'+t;
 }
+
 function pageBooking(){
-  let rows=applyFilters(dashboardData.bookingLog).map(r=>({...r,avg:r.actual_gbp&&r.qty?r.actual_gbp/r.qty:null}));
-  const t=renderTable({key:"booking",title:"Booking Log — buckets (date × carrier × destination)",rows,
-    columns:[{k:"date",label:"Date",html:r=>fmtDate(r.date)},{k:"carrier",label:"Carrier"},{k:"destination",label:"Destination"},
-      {k:"qty",label:"Qty Labels",cls:"num",fmt:num},{k:"actual_gbp",label:"Actual £",cls:"num",fmt:gbp},{k:"avg",label:"Avg £/Label",cls:"num",fmt:rate}]});
-  return '<div class="note">Workbook grain is Carrier × Service × Weight × Destination × Label Type. Service, Weight and Label Type are <b>not in PostgreSQL</b>, so buckets use the available dimensions (date × carrier × destination, ≥5 labels). £ = real <code>carrier_charge</code>.</div>'+t;
+  const rows=applyFilters(dashboardData.bookingLog).map(r=>({...r,avg:r.actual_gbp&&r.qty?r.actual_gbp/r.qty:null}));
+  const t=renderTable({key:"booking",title:"Booking Log — Sheet 3 (cols A–Q)",rows,
+    columns:[{k:"booking_id",label:"Booking ID (A)"},
+      {k:"date",label:"Date (B)",html:r=>fmtDate(r.date)},
+      {k:"week_label",label:"Week Label (Q)"},
+      {k:"order_id",label:"Order ID (C)",html:r=>'<span class="muted">'+esc(r.order_id)+'</span>'},
+      {k:"carrier",label:"Carrier (D)"},
+      {k:"service",label:"Service (E)",html:r=>txt(r.service)},
+      {k:"destination",label:"Destination (F)"},
+      {k:"weight_band",label:"Weight Band (G)",html:r=>txt(r.weight_band)},
+      {k:"qty",label:"Qty Labels (H)",cls:"num",fmt:num},
+      {k:"rate_ex_vat",label:"Rate Ex VAT £ (J)",cls:"num",html:r=>txt(r.rate_ex_vat)},
+      {k:"forecast_inc_vat",label:"Forecast £ Inc VAT (N)",cls:"num",html:r=>txt(r.forecast_inc_vat)},
+      {k:"actual_gbp",label:"Actual £ ⌁",cls:"num",fmt:gbp},
+      {k:"avg",label:"Avg £/Label",cls:"num",fmt:rate},
+      {k:"label_type",label:"Label Type (P)",html:r=>txt(r.label_type)},{k:"status",label:"Status (O)",html:r=>'<span class="pill '+(r.status==="Booked"?"ok":(r.status==="KILL — reclassify"?"kill":"check"))+'">'+esc(r.status)+'</span>'}]});
+  return '<div class="note">README grain is <b>Carrier × Service × Weight × Destination × Label Type</b>. '
+    +'<code>service_tier</code>, <code>weight_band_kg</code>, <code>destination_zone</code> and <code>label_type</code> <b>do not exist</b> in PostgreSQL, '
+    +'so those columns render “—” and buckets use only the available dimensions (date × carrier × shipping_country, ≥5 labels). '
+    +'Forecast/Rate columns need the rate card. <b>⌁ Actual £</b> = <code>carrier_charge</code>.</div>'+t;
 }
+
 function pageRateCard(){
-  return '<div class="note">There is <b>no rate-card table in PostgreSQL</b>. The dashboard\'s "Expected £" is therefore derived from a <b>prior-8-week baseline rate per carrier</b> (the workbook\'s documented fallback), shown below, rather than a Carrier×Service×Weight×Destination rate lookup.</div>'
-    +renderTable({key:"ratecardBaseline",title:"Derived baseline rate per carrier (proxy for rate card)",search:false,
-      rows:dashboardData.carrierSummary.filter(r=>r.baseline_rate!==null),
-      columns:[{k:"carrier",label:"Carrier"},{k:"baseline_rate",label:"Baseline £/Label (prior 8 wks)",cls:"num",fmt:rate},
-        {k:"avg_rate",label:"This week £/Label",cls:"num",fmt:rate},{k:"labels",label:"Labels (W27)",cls:"num",fmt:num}]});
+  const M=dashboardData.rateCardMeta;
+  const t=renderTable({key:"rateCard",title:"Rate Card — Sheet 4 ("+M.rows+" rows, source: "+M.source+")",rows:dashboardData.rateCard,
+    columns:[{k:"lookup_key",label:"Lookup Key (A)"},{k:"carrier",label:"Carrier (B)"},{k:"service",label:"Service (C)"},
+      {k:"weight_band",label:"Weight Band (D)"},{k:"max_kg",label:"Max kg (E)",cls:"num",html:r=>txt(r.max_kg)},
+      {k:"destination",label:"Destination (F)"},{k:"rate_ex_vat",label:"Rate Ex VAT £ (G)",cls:"num",fmt:gbp},
+      {k:"vat_pct",label:"VAT % (H)",cls:"num",html:r=>pct(r.vat_pct)},{k:"effective_from",label:"Effective From (I)"}]});
+  return '<div class="note">This is the <b>workbook\'s</b> master price list (Sheet 4) — the business spec owns it, exactly as it owns the BLOS thresholds. '
+    +'PostgreSQL\'s <code>blos.postage</code> table exists but holds <b>0 rows</b>, so it cannot serve this yet (backfill/ETL gap). '
+    +'<b>Rate card age = '+M.age_days+' days</b> (newest Effective From '+esc(M.newest_effective_from)+' vs as-of '+esc(M.as_of)+') → <b>KPI 28 FAILS</b> the 30-day limit. '
+    +'<b>Forecast £ still cannot be computed</b>: the Lookup Key needs Carrier|Service|WeightBand|Destination, and <code>service_tier</code>, '
+    +'<code>weight_band_kg</code> and <code>destination_zone</code> do not exist on <code>order_shipping_billing_detail</code>.</div>'+t;
 }
+
 function pageReference(){
-  const md=dashboardData.metadata;
+  const md=dashboardData.metadata, L=dashboardData.lookups, R=dashboardData.returnLabels;
   const blos=Object.entries(dashboardData.blos).map(([k,v])=>({key:k,val:(k.includes('gbp')?'£'+Number(v).toFixed(2):(k.includes('days')?v+' days':(v<=1?(v*100).toFixed(2)+'%':v)))}));
-  const blosT=renderTable({key:"blos",title:"BLOS Thresholds (from workbook — blos schema empty)",search:false,rows:blos,
+  const blosT=renderTable({key:"blos",title:"BLOS Thresholds — "+blos.length+" keys (workbook; blos schema empty)",search:false,rows:blos,
     columns:[{k:"key",label:"BLOS Key"},{k:"val",label:"Current Value",cls:"num"}]});
+  const listRows=[{list:"Carriers",n:L.carriers.length,items:L.carriers.join(", ")},
+    {list:"Statuses",n:L.statuses.length,items:L.statuses.join(", ")},
+    {list:"Issue Types",n:L.issueTypes.length,items:L.issueTypes.join(", ")},
+    {list:"Label Types",n:L.labelTypes.length,items:L.labelTypes.join(", ")},
+    {list:"Destinations",n:L.destinations.length,items:L.destinations.join(", ")},
+    {list:"Weight Bands",n:L.weightBands.length,items:L.weightBands.join(", ")},
+    {list:"Owners",n:L.owners.length,items:L.owners.join(", ")}];
+  const listsT=renderTable({key:"lists",title:"Lists — Sheet 8 (dropdown sources)",search:false,rows:listRows,
+    columns:[{k:"list",label:"List"},{k:"n",label:"Count",cls:"num"},{k:"items",label:"Values",html:r=>'<span class="muted">'+esc(r.items)+'</span>'}]});
   const trend=renderTable({key:"trend",title:"Order volume — last 6 ISO weeks",search:false,rows:dashboardData.weeklyTrend,
     columns:[{k:"iso_week",label:"ISO Week"},{k:"orders",label:"Orders",cls:"num",fmt:num}]});
-  const svc=renderTable({key:"svc",title:"Service-label proxies (source_name — not label_type)",search:false,rows:dashboardData.serviceProxies,
+  const svc=renderTable({key:"svc",title:"Service-label proxies (source_name — NOT label_type)",search:false,rows:dashboardData.serviceProxies,
     columns:[{k:"proxy",label:"Source proxy"},{k:"orders",label:"Orders",cls:"num",fmt:num}]});
   const gaps=md.gaps.map(x=>'<li>'+esc(x)+'</li>').join('');
-  return '<div class="note">Provenance and known data gaps — so no figure is mistaken for something it is not.</div>'
+  return '<div class="note">Provenance, dropdown sources and known production gaps — so no figure is mistaken for something it is not.</div>'
     +'<div class="tablewrap"><div class="tscroll"><table><tbody>'
     +'<tr><td style="width:190px"><b>Source</b></td><td>'+esc(md.source)+'</td></tr>'
     +'<tr><td><b>Tables</b></td><td>'+esc(md.tables.join(', '))+'</td></tr>'
@@ -484,22 +846,39 @@ function pageReference(){
     +'<tr><td><b>Financial basis</b></td><td>'+esc(md.financial_basis)+'</td></tr>'
     +'<tr><td><b>Carrier mapping</b></td><td>'+esc(md.carrier_mapping)+'</td></tr>'
     +'</tbody></table></div></div>'
-    +'<h2 class="sec">Known data gaps</h2><div class="note"><ul style="margin:4px 0 0 18px;padding:0">'+gaps+'</ul></div>'
-    +'<div class="two-col"><div>'+blosT+'</div><div>'+trend+svc+'</div></div>';
+    +'<h2 class="sec">Production gaps (README fields with no PostgreSQL source)</h2><div class="note"><ul style="margin:4px 0 0 18px;padding:0">'+gaps+'</ul></div>'
+    +'<h2 class="sec">Lists (Sheet 8)</h2>'+listsT
+    +'<h2 class="sec">BLOS Thresholds</h2>'+blosT
+    +'<h2 class="sec">Return Label In — verified (README Section 21)</h2>'
+    +'<div class="note"><b>'+num(R.return_label_in)+' return labels</b> in '+esc(R.week_label)+' → return rate <b>'+pct(R.return_rate)+'</b> of '
+    +num(R.customer_order_labels)+' customer-order labels — <b>FAILS</b> the 2% target on every basis '
+    +'(billed-only '+pct(R.alt_billed_only.rate)+' · orders denominator '+pct(R.alt_orders_denominator.rate)+'). '
+    +'Excludes '+R.excluded.fba_returns+' FBA returns, '+R.excluded.amazon_unpaid_labels+' AmazonUnPaidLabel (customer-paid) and '
+    +R.excluded.shopify_refunds_no_label+' Shopify refunds (no label field). <b>Return Label Out is unavailable</b> (needs <code>shipment.label_type</code>), so this is a lower bound. '
+    +'Costs mix GBP/EUR/USD — deliberately not summed.</div>'
+    +renderTable({key:"returnLabels",title:"Return Label In — source-by-source evidence",search:false,rows:R.rows,
+       columns:[{k:"source",label:"Source"},{k:"tbl",label:"PostgreSQL table"},
+         {k:"labels",label:"Labels",cls:"num",html:r=>r.labels===null?'<span class="muted">—</span>':num(r.labels)},
+         {k:"cost",label:"Label cost",cls:"num",html:r=>r.cost===null?'<span class="muted">—</span>':r.cost.toFixed(2)},
+         {k:"ccy",label:"Ccy"},{k:"basis",label:"Basis",html:r=>'<span class="muted">'+esc(r.basis)+'</span>'}]})
+    +'<div class="two-col"><div>'+trend+'</div><div>'+svc+'</div></div>';
 }
+
 const PAGES={dashboard:pageDashboard,daily:pageDaily,weekly:pageWeekly,leakage:pageLeakage,booking:pageBooking,ratecard:pageRateCard,reference:pageReference};
 
 function buildFilters(){
+  const L=dashboardData.lookups;
   const carriers=[...new Set(dashboardData.carrierSummary.map(r=>r.carrier))];
   const dests=[...new Set(dashboardData.bookingLog.map(r=>r.destination))].sort();
   const weeks=["W27 2026"];
   const sel=(id,label,opts,val)=>'<div class="fld"><label>'+label+'</label><select data-filter="'+id+'"><option value="">All</option>'+opts.map(o=>'<option'+(o===val?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select></div>';
-  let h='';
-  if(["dashboard","weekly","booking"].includes(state.tab))h+=sel('carrier','Carrier',carriers,state.filters.carrier);
-  if(state.tab==="booking")h+=sel('destination','Destination',dests,state.filters.destination);
-  h+=sel('week','Week',weeks,state.filters.week);
-  h+='<button class="clear" id="clearFilters">Clear filters</button>';
-  document.getElementById('filters').innerHTML=h;
+  let s='';
+  if(["dashboard","weekly","booking","leakage"].includes(state.tab))s+=sel('carrier','Carrier',carriers,state.filters.carrier);
+  if(state.tab==="booking")s+=sel('destination','Destination',dests,state.filters.destination);
+  if(state.tab==="leakage"){s+=sel('status','Status',L.statuses,state.filters.status);s+=sel('issue','Issue Type',L.issueTypes,state.filters.issue);}
+  s+=sel('week','Week',weeks,state.filters.week);
+  s+='<button class="clear" id="clearFilters">Clear filters</button>';
+  document.getElementById('filters').innerHTML=s;
 }
 function render(){
   document.getElementById('main').innerHTML='<div class="page active">'+PAGES[state.tab]()+'</div>';
@@ -514,7 +893,7 @@ function initTabs(){
 document.addEventListener('click',e=>{
   const th=e.target.closest('th[data-col]');
   if(th){const k=th.dataset.sk,c=th.dataset.col,cur=state.sort[k];state.sort[k]=(cur&&cur.key===c)?{key:c,dir:cur.dir*-1}:{key:c,dir:1};render();return;}
-  if(e.target.id==='clearFilters'){state.filters={carrier:"",destination:"",week:""};render();}
+  if(e.target.id==='clearFilters'){state.filters={carrier:"",destination:"",week:"",status:"",issue:""};render();}
 });
 document.addEventListener('change',e=>{const f=e.target.dataset.filter;if(f){state.filters[f]=e.target.value;render();}});
 document.addEventListener('input',e=>{const sf=e.target.dataset.sf;if(sf){state.search[sf]=e.target.value;const p=e.target.selectionStart;render();
