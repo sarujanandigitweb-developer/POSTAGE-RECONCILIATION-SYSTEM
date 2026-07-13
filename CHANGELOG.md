@@ -8,6 +8,35 @@ system. Every phase is gated on GPT review per the Mini-AIOS operating model.
 
 ---
 
+## [0.4.1] — 2026-07-09 · Calculation Parity — implementation fixes
+**Status: complete. Dashboard implementation only — no schema changes, no PostgreSQL writes.**
+
+### Fixed (Priority 2 — incorrect calculations)
+- **Leakage £ (Others)** was hardcoded `0.00`; now **`-87.55`** = `Invoice £ − Forecast £` (signed, README Sheet 6 col I).
+- **KPI 22 Daily reconciliation** no longer reports a false `100% PASS` → **NOT COMPUTABLE**. Closure needs
+  `shipment.label_type`, and the customer Gap is structurally 0 (all 3,634 non-FBA orders have exactly 1 shipment row).
+- **KPI 26 Avg dispute age** contradiction resolved → **NOT COMPUTABLE**, and Days Open / Date Raised are now blank
+  in the Leakage Register (one consistent rule: Date Raised is a manual field with no PG source).
+- **Variance %** now applies the workbook `IFERROR(...,0)` — Wayfair shows `0%`, not blank.
+- **"Expected £" renamed "Estimated Cost (Historical Baseline)"** everywhere; it is NOT the workbook Forecast £.
+- **Open Disputes = 1** (was 2) — "Killed" is not an open status per README §13.
+
+### Refreshed snapshot (as-of 2026-07-09)
+Orders 4,020→**4,027** · FBA 389→**393** · Self 3,484→**3,487** · Labels 3,631→**3,634** ·
+Actual £12,517.31→**£12,525.72** · Others 24→**23**. W27 is **not immutable** — rows are back-dated into the
+closed window (`max(order_date)` = 2026-07-09).
+
+### Added (Phase 2 — no silent blanks)
+- 23 blocked fields now render an **`Unavailable`** pill with a tooltip naming the exact requirement
+  (e.g. "Requires public.shipment.label_type (schema)").
+
+### Verified
+- **42/42 automated calculation checks pass**; JS parses; 0 external deps; header `#15243d`; rate card 208 rows.
+- **KPIs: 2 PASS · 3 FAIL · 5 NOT COMPUTABLE.** Zero dashboard calculation bugs remain.
+
+### Added
+- `documentation/15_calculation_parity_implementation.md`
+
 ## [0.4.0] — 2026-07-09 · Zero-Trust Final Audit (pre-production)
 **Status: complete. Workbook re-parsed from file; PostgreSQL swept across all schemas/tables/views.**
 

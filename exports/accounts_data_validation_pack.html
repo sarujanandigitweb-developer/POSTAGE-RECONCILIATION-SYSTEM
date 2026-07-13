@@ -1,0 +1,711 @@
+<title>Postage Reconciliation — Data Validation Pack</title>
+<style>
+:root{
+  --paper:#f3f5f8; --surface:#ffffff; --surface-2:#eef1f5;
+  --ink:#0f1c30; --body:#243347; --muted:#5d6979;
+  --rule:#d2d8e1; --rule-soft:#e3e8ee;
+  --accent:#2c6b8f; --accent-soft:#e3eef4;
+  --ok:#1b6b4a; --ok-bg:#e2f1ea;
+  --warn:#8a5a12; --warn-bg:#f7eedd;
+  --crit:#9c2f2c; --crit-bg:#f7e4e3;
+  --shadow:0 1px 2px rgba(15,28,48,.06),0 8px 24px -12px rgba(15,28,48,.18);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#0b111c; --surface:#111a29; --surface-2:#16202f;
+    --ink:#e8edf4; --body:#c3cdda; --muted:#8593a6;
+    --rule:#26334a; --rule-soft:#1c2739;
+    --accent:#6fabcb; --accent-soft:#152634;
+    --ok:#57c194; --ok-bg:#10281f;
+    --warn:#d3a052; --warn-bg:#2b2214;
+    --crit:#e08079; --crit-bg:#2e1917;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0b111c; --surface:#111a29; --surface-2:#16202f;
+  --ink:#e8edf4; --body:#c3cdda; --muted:#8593a6;
+  --rule:#26334a; --rule-soft:#1c2739;
+  --accent:#6fabcb; --accent-soft:#152634;
+  --ok:#57c194; --ok-bg:#10281f;
+  --warn:#d3a052; --warn-bg:#2b2214;
+  --crit:#e08079; --crit-bg:#2e1917;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
+}
+:root[data-theme="light"]{
+  --paper:#f3f5f8; --surface:#ffffff; --surface-2:#eef1f5;
+  --ink:#0f1c30; --body:#243347; --muted:#5d6979;
+  --rule:#d2d8e1; --rule-soft:#e3e8ee;
+  --accent:#2c6b8f; --accent-soft:#e3eef4;
+  --ok:#1b6b4a; --ok-bg:#e2f1ea;
+  --warn:#8a5a12; --warn-bg:#f7eedd;
+  --crit:#9c2f2c; --crit-bg:#f7e4e3;
+  --shadow:0 1px 2px rgba(15,28,48,.06),0 8px 24px -12px rgba(15,28,48,.18);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--body);
+  font:400 16px/1.6 -apple-system,"Segoe UI",system-ui,"Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px 96px}
+.prose{max-width:68ch}
+h1,h2,h3{font-family:Georgia,"Iowan Old Style","Times New Roman",serif;color:var(--ink);
+  text-wrap:balance;font-weight:600;letter-spacing:-.01em}
+h1{font-size:clamp(28px,4vw,42px);line-height:1.15;margin:0 0 12px}
+h2{font-size:26px;line-height:1.25;margin:0 0 6px}
+h3{font-size:18px;margin:28px 0 8px}
+p{margin:0 0 14px}
+.eyebrow{font:600 11px/1 ui-monospace,"SF Mono",Menlo,monospace;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--accent);margin:0 0 10px}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:12.5px}
+code{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.88em;background:var(--surface-2);
+  padding:1px 5px;border-radius:3px;color:var(--ink)}
+.num{text-align:right;font-variant-numeric:tabular-nums;
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:12.5px}
+
+header.masthead{border-bottom:2px solid var(--ink);padding:56px 0 26px;margin-bottom:34px}
+.masthead .lede{font-size:17px;color:var(--muted);max-width:70ch;margin-top:6px}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1px;
+  background:var(--rule);border:1px solid var(--rule);margin-top:30px}
+.meta div{background:var(--surface);padding:12px 14px}
+.meta dt{font:600 10px/1 ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);margin:0 0 6px}
+.meta dd{margin:0;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--ink);
+  word-break:break-all}
+
+section{margin:52px 0 0;scroll-margin-top:20px}
+.sechead{border-top:1px solid var(--rule);padding-top:22px;margin-bottom:18px}
+.srcline{font:400 12.5px/1.5 ui-monospace,Menlo,monospace;color:var(--muted);margin-top:8px}
+.srcline b{color:var(--accent);font-weight:600}
+
+.callout{border:1px solid var(--rule);border-left:3px solid var(--crit);background:var(--surface);
+  padding:16px 18px;margin:22px 0;box-shadow:var(--shadow)}
+.callout.info{border-left-color:var(--accent)}
+.callout h3{margin:0 0 8px;font-size:16px}
+.callout p:last-child{margin-bottom:0}
+
+.scroll{overflow-x:auto;border:1px solid var(--rule);background:var(--surface);box-shadow:var(--shadow)}
+.scroll.tall{max-height:560px;overflow-y:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+thead th{position:sticky;top:0;z-index:2;background:var(--surface-2);color:var(--ink);
+  text-align:left;font:600 10.5px/1.3 ui-monospace,Menlo,monospace;letter-spacing:.07em;
+  text-transform:uppercase;padding:10px 12px;border-bottom:1px solid var(--rule);white-space:nowrap}
+tbody td{padding:8px 12px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:var(--surface-2)}
+tfoot td{padding:10px 12px;border-top:2px solid var(--rule);font-weight:700;color:var(--ink);
+  background:var(--surface-2)}
+.sub{font:400 11px/1.3 ui-monospace,Menlo,monospace;color:var(--muted);margin-top:3px}
+.note-cell{font-size:12px;color:var(--muted)}
+.ctl{display:inline-block;background:var(--crit-bg);color:var(--crit);padding:0 3px;border-radius:2px}
+
+.tag{display:inline-block;padding:2px 8px;border-radius:2px;font:600 10.5px/1.6 ui-monospace,Menlo,monospace;
+  letter-spacing:.03em;white-space:nowrap}
+.tag.ok{color:var(--ok);background:var(--ok-bg)}
+.tag.warn{color:var(--warn);background:var(--warn-bg)}
+.tag.crit{color:var(--crit);background:var(--crit-bg)}
+.tag.neutral{color:var(--muted);background:var(--surface-2)}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;
+  background:var(--rule);border:1px solid var(--rule);margin:20px 0}
+.stat{background:var(--surface);padding:14px 16px}
+.stat .k{font:600 10px/1 ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.stat .v{font-family:ui-monospace,Menlo,monospace;font-size:22px;color:var(--ink);margin-top:8px;
+  font-variant-numeric:tabular-nums}
+.stat .s{font-size:11.5px;color:var(--muted);margin-top:4px}
+
+ol.asks{counter-reset:ask;list-style:none;padding:0;margin:20px 0 0}
+ol.asks li{counter-increment:ask;position:relative;padding:16px 0 16px 52px;border-top:1px solid var(--rule-soft)}
+ol.asks li::before{content:"Q" counter(ask);position:absolute;left:0;top:16px;
+  font:600 11px/1 ui-monospace,monospace;color:var(--accent);letter-spacing:.06em;
+  background:var(--accent-soft);padding:5px 7px;border-radius:2px}
+ol.asks strong{color:var(--ink);display:block;margin-bottom:4px;font-weight:600}
+
+footer{margin-top:64px;border-top:1px solid var(--rule);padding-top:20px;font-size:12.5px;color:var(--muted)}
+@media(max-width:640px){.wrap{padding:0 16px 60px}header.masthead{padding-top:34px}}
+</style>
+
+<div class="wrap">
+<header class="masthead">
+  <p class="eyebrow">Postage Reconciliation System · Data Validation Pack</p>
+  <h1>Fetched PostgreSQL data, for Accounts Team review</h1>
+  <p class="lede">Every figure below was read directly from the production database in read-only mode.
+    Nothing was copied from the Excel workbook, and no value was estimated or filled in. Where PostgreSQL
+    has no source for a workbook column, it is marked <span class="tag crit">Unavailable</span> rather than
+    shown as blank or zero.</p>
+  <div class="meta">
+    <div><dt>Database</dt><dd>order_management_copy</dd></div>
+    <div><dt>Access mode</dt><dd>Read-only · SELECT only</dd></div>
+    <div><dt>Data as-of</dt><dd>2026-07-10</dd></div>
+    <div><dt>Reporting week</dt><dd>W27 2026 · 29 Jun – 05 Jul</dd></div>
+    <div><dt>Rate card checksum</dt><dd>c4aa10ea4f0a1f79ae92509cc6263536</dd></div>
+    <div><dt>Booking log checksum</dt><dd>65de438119a82dbc3ebfbe4efddd00ba</dd></div>
+  </div>
+</header>
+
+<div class="callout">
+  <h3>Before you review: the source tables changed five times today</h3>
+  <p>While this data was being fetched, the rate-card tables were rebuilt (<code>blos.postage</code> was dropped
+  and split into <code>blos.local_postage</code> + <code>blos.international_postage</code>), a
+  <code>vat_rate_percentage</code> column was added, and <code>public.carrier_service</code> — a 380-row carrier
+  lookup table — <b>was dropped entirely</b>.</p>
+  <p>Separately, week W27 is <b>not frozen</b>. Orders are still being back-dated into it: total cost moved from
+  £12,517.31 to <b>£12,527.90</b> over three days, and the most recent order stamped inside W27 was created on
+  <b>10 July</b>, five days after the week closed. Please treat every £ figure as “as-of 10 July”, not final.</p>
+</div>
+
+<div class="callout info">
+  <h3>How to read this pack</h3>
+  <p><span class="tag ok">Value</span> means PostgreSQL supplied it directly.
+  <span class="tag warn">Conflict</span> means two readings are possible and we need your ruling.
+  <span class="tag crit">Unavailable</span> means <b>no column exists in the database</b> — it is not a blank we
+  forgot to fill, and it must not be read as zero.</p>
+</div>
+
+<section id="rc-domestic">
+  <div class="sechead">
+    <p class="eyebrow">Dataset 1 of 5</p>
+    <h2>Rate Card — UK domestic</h2>
+    <p class="srcline">Source: <b>blos.local_postage</b> · 45 rows · all rows shown</p>
+  </div>
+  <div class="prose">
+    <p>This is the complete domestic rate card as it exists in PostgreSQL today. <b>Rate Ex VAT</b> is not stored —
+    we derive it as <code>price(with tax) ÷ 1.20</code>. The <code>vat_rate_percentage</code> column holds
+    <code>20.00</code> on every row, so we cannot express the 19% (German) or 0% (zero-rated) VAT the workbook uses.
+    <b>Notes</b> has no column in this table at all.</p>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="k">Rows</div><div class="v">45</div><div class="s">all active</div></div>
+    <div class="stat"><div class="k">Carriers</div><div class="v">5</div><div class="s">of 10 in the workbook</div></div>
+    <div class="stat"><div class="k">Services</div><div class="v">45</div><div class="s">one rate each</div></div>
+    <div class="stat"><div class="k">Effective from</div><div class="v">2026-01-01</div><div class="s">single value, all rows</div></div>
+  </div>
+  <div class="scroll tall">
+    <table><thead><tr>
+      <th>#</th><th>Carrier</th><th>Service</th><th>Weight band</th><th>Max kg</th><th>Destination</th>
+      <th>Rate ex VAT</th><th>VAT %</th><th>Effective from</th><th>Notes</th>
+    </tr></thead><tbody>
+<tr><td class="num">1</td><td class="mono">ROYAL MAIL</td><td class="mono">CRL48 100g LL</td><td>100g</td><td class="num">0.1</td><td>UK Domestic</td><td class="num">£1.91</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">2</td><td class="mono">ROYAL MAIL</td><td class="mono">CRL48 250g LL</td><td>250g</td><td class="num">0.25</td><td>UK Domestic</td><td class="num">£1.91</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">3</td><td class="mono">ROYAL MAIL</td><td class="mono">CRL48 500g LL</td><td>500g</td><td class="num">0.5</td><td>UK Domestic</td><td class="num">£1.91</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">4</td><td class="mono">ROYAL MAIL</td><td class="mono">Tracked 48 RM 2Kg Non Signature</td><td>2kg</td><td class="num">2</td><td>UK Domestic</td><td class="num">£3.77</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">5</td><td class="mono">ROYAL MAIL</td><td class="mono">Tracked 24 RM 5Kg Non Signature</td><td>5kg</td><td class="num">5</td><td>UK Domestic</td><td class="num">£5.46</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">6</td><td class="mono">ROYAL MAIL</td><td class="mono">Tracked 24 RM 750g LL Non Signature</td><td>750g</td><td class="num">0.75</td><td>UK Domestic</td><td class="num">£2.80</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">7</td><td class="mono">ROYAL MAIL</td><td class="mono">Tracked 48 RM 750g LL Non Signature</td><td>750g</td><td class="num">0.75</td><td>UK Domestic</td><td class="num">£2.33</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">8</td><td class="mono">ROYAL MAIL</td><td class="mono">Tracked 24 RM 1Kg Non Signature</td><td>1kg</td><td class="num">1</td><td>UK Domestic</td><td class="num">£5.46</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">9</td><td class="mono">ROYAL MAIL</td><td class="mono">Tracked 48 RM 15Kg Non Signature</td><td>15kg</td><td class="num">15</td><td>UK Domestic</td><td class="num">£3.77</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">10</td><td class="mono">ROYAL MAIL</td><td class="mono">Tracked 48 RM 5Kg Non Signature</td><td>5kg</td><td class="num">5</td><td>UK Domestic</td><td class="num">£3.77</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">11</td><td class="mono">ROYAL MAIL</td><td class="mono">Tracked 24 RM 2Kg Non Signature</td><td>2kg</td><td class="num">2</td><td>UK Domestic</td><td class="num">£5.46</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">12</td><td class="mono">ROYAL MAIL</td><td class="mono">ROYAL MAIL TRACKED 24 (LBT)</td><td><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td>UK Domestic</td><td class="num">£2.73</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">13</td><td class="mono">ROYAL MAIL</td><td class="mono">ROYAL MAIL TRACKED 24</td><td><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td>UK Domestic</td><td class="num">£5.34</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">14</td><td class="mono">ROYAL MAIL</td><td class="mono">ROYAL MAIL TRACKED 48 (LBT)</td><td><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td>UK Domestic</td><td class="num">£2.27</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">15</td><td class="mono">ROYAL MAIL</td><td class="mono">ROYAL MAIL TRACKED 48</td><td><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td>UK Domestic</td><td class="num">£3.65</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">16</td><td class="mono">SMART TRACK</td><td class="mono">Smart Track Royalmail 2nd 100g LL</td><td>100g</td><td class="num">0.1</td><td>UK Domestic</td><td class="num">£1.32</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">17</td><td class="mono">SMART TRACK</td><td class="mono">Smart Track Royalmail 2nd 250g LL</td><td>250g</td><td class="num">0.25</td><td>UK Domestic</td><td class="num">£1.77</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">18</td><td class="mono">SMART TRACK</td><td class="mono">Smart Track Royalmail 1st 100g LL</td><td>100g</td><td class="num">0.1</td><td>UK Domestic</td><td class="num">£2.40</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">19</td><td class="mono">SMART TRACK</td><td class="mono">Smart Track Royalmail 1st 250g LL</td><td>250g</td><td class="num">0.25</td><td>UK Domestic</td><td class="num">£3.18</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">20</td><td class="mono">SMART TRACK</td><td class="mono">Smart Track Royalmail 2nd 1kg packets</td><td>1kg</td><td class="num">1</td><td>UK Domestic</td><td class="num">£2.65</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">21</td><td class="mono">SMART TRACK</td><td class="mono">Smart Track Royalmail 2nd 2kg packets</td><td>2kg</td><td class="num">2</td><td>UK Domestic</td><td class="num">£2.87</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">22</td><td class="mono">SMART TRACK</td><td class="mono">Smart Track Royalmail 1st 1kg pack</td><td>1kg</td><td class="num">1</td><td>UK Domestic</td><td class="num">£5.45</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">23</td><td class="mono">SMART TRACK</td><td class="mono">Smart Track Hermes 2Kg</td><td>2kg</td><td class="num">2</td><td>UK Domestic</td><td class="num">£2.17</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">24</td><td class="mono">SMART TRACK</td><td class="mono">Smart Track Hermes 5Kg</td><td>5kg</td><td class="num">5</td><td>UK Domestic</td><td class="num">£2.87</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">25</td><td class="mono">SMART TRACK</td><td class="mono">Smart Track Hermes 15Kg</td><td>15kg</td><td class="num">15</td><td>UK Domestic</td><td class="num">£2.93</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">26</td><td class="mono">SMART TRACK</td><td class="mono">Smart Track AMAZON SHIPPING TWO DAY LARGE LETTER</td><td><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td>UK Domestic</td><td class="num">£2.06</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">27</td><td class="mono">SMART TRACK</td><td class="mono">Smart Track AMAZON SHIPPING 2 DAY SMALL</td><td><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td>UK Domestic</td><td class="num">£2.42</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">28</td><td class="mono">SMART TRACK</td><td class="mono">Smart Track AMAZON 2 DAY STANDARD</td><td><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td>UK Domestic</td><td class="num">£2.70</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">29</td><td class="mono">SMART TRACK</td><td class="mono">ROYAL MAIL 48 LARGE LETTER NEX</td><td><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td>UK Domestic</td><td class="num">£2.03</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">30</td><td class="mono">SMART TRACK</td><td class="mono">ROYAL MAIL TRACKED 48 NEX (2kg)</td><td>2kg</td><td class="num">2</td><td>UK Domestic</td><td class="num">£2.27</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">31</td><td class="mono">SMART TRACK</td><td class="mono">ROYAL MAIL TRACKED 48 NEX (5kg)</td><td>5kg</td><td class="num">5</td><td>UK Domestic</td><td class="num">£2.90</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">32</td><td class="mono">DPD</td><td class="mono">DPD Two Day UK</td><td><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td>UK Domestic</td><td class="num">£5.61</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">33</td><td class="mono">DPD</td><td class="mono">DPD Next Day UK</td><td><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td>UK Domestic</td><td class="num">£5.61</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">34</td><td class="mono">Amazon Shipping</td><td class="mono">Amazon Shipping-UK Premium -2kg</td><td>2kg</td><td class="num">2</td><td>UK Domestic</td><td class="num">£4.69</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">35</td><td class="mono">Amazon Shipping</td><td class="mono">Amazon Shipping-UK Premium -5kg</td><td>5kg</td><td class="num">5</td><td>UK Domestic</td><td class="num">£5.82</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">36</td><td class="mono">Amazon Shipping</td><td class="mono">Amazon Shipping-UK Premium -10kg</td><td>10kg</td><td class="num">10</td><td>UK Domestic</td><td class="num">£6.78</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">37</td><td class="mono">Amazon Shipping</td><td class="mono">Amazon Shipping-UK Standard -2kg</td><td>2kg</td><td class="num">2</td><td>UK Domestic</td><td class="num">£4.22</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">38</td><td class="mono">Amazon Shipping</td><td class="mono">Amazon Shipping-UK Standard -7kg</td><td>7kg</td><td class="num">7</td><td>UK Domestic</td><td class="num">£4.83</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">39</td><td class="mono">Amazon Shipping</td><td class="mono">Amazon Shipping-UK Standard -10kg</td><td>10kg</td><td class="num">10</td><td>UK Domestic</td><td class="num">£6.11</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">40</td><td class="mono">Evri</td><td class="mono">Evri Hermes 2Kg 48h</td><td>2kg</td><td class="num">2</td><td>UK Domestic</td><td class="num">£2.49</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">41</td><td class="mono">Evri</td><td class="mono">Evri Hermes 5Kg 48h</td><td>5kg</td><td class="num">5</td><td>UK Domestic</td><td class="num">£2.81</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">42</td><td class="mono">Evri</td><td class="mono">Evri Hermes 15KG 48H</td><td>15kg</td><td class="num">15</td><td>UK Domestic</td><td class="num">£2.81</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">43</td><td class="mono">Evri</td><td class="mono">Evri Hermes 2Kg 24h</td><td>2kg</td><td class="num">2</td><td>UK Domestic</td><td class="num">£2.81</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">44</td><td class="mono">Evri</td><td class="mono">Evri Hermes 5Kg 24h</td><td>5kg</td><td class="num">5</td><td>UK Domestic</td><td class="num">£3.24</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="num">45</td><td class="mono">Evri</td><td class="mono">Evri Hermes 15KG 24H</td><td>15kg</td><td class="num">15</td><td>UK Domestic</td><td class="num">£3.24</td><td class="num">20%</td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+    </tbody></table>
+  </div>
+  <div class="prose"><p style="margin-top:14px"><b>Please confirm:</b> is <code>SMART TRACK</code> a carrier, or a
+  reseller of Royal Mail / Evri / Amazon services? It currently prices <i>Royal Mail</i> services (rows 29–31) under
+  its own name. This single decision changes which carrier every Royal Mail label is attributed to.</p></div>
+</section>
+
+<section id="rc-intl">
+  <div class="sechead">
+    <p class="eyebrow">Dataset 2 of 5</p>
+    <h2>Rate Card — international</h2>
+    <p class="srcline">Source: <b>blos.international_postage</b> · 544 rows · 8 shown</p>
+  </div>
+  <div class="prose">
+    <p>Only <b>two carriers</b> exist here: Royal Mail (483 rows) and Evri (61). There is <b>no DHL rate card
+    anywhere</b> in the database — yet DHL is 514 labels and £3,035.67 of spend in W27, our second-largest carrier.
+    No GLS and no Wayfair either.</p>
+    <p>Rate ex VAT is Unavailable on all 544 rows because <code>postage_value</code> carries no tax basis, and the two
+    columns that would declare it — <code>pricing_model</code> and <code>charge_type</code> — are <b>100% empty</b>.</p>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="k">Rows</div><div class="v">544</div><div class="s">all active</div></div>
+    <div class="stat"><div class="k">Carriers</div><div class="v">2</div><div class="s">Royal Mail, Evri</div></div>
+    <div class="stat"><div class="k">Services</div><div class="v">4</div><div class="s">HVK, DDP, DDU ×2</div></div>
+    <div class="stat"><div class="k">Destinations</div><div class="v">37</div><div class="s">countries</div></div>
+    <div class="stat"><div class="k">Weight bands</div><div class="v">14</div><div class="s">1kg – 30kg</div></div>
+  </div>
+  <div class="scroll">
+    <table><thead><tr>
+      <th>Carrier</th><th>Service</th><th>Weight band</th><th>Max kg</th><th>Destination</th>
+      <th>Rate ex VAT</th><th>VAT %</th><th>Effective from</th><th>Notes</th>
+    </tr></thead><tbody>
+<tr><td class="mono">Royal Mail</td><td class="mono">Heavier Services HVK</td><td>1kg</td><td class="num">1</td><td>Austria</td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="mono">Royal Mail</td><td class="mono">Heavier Services HVK</td><td>1kg</td><td class="num">1</td><td>Belgium</td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="mono">Royal Mail</td><td class="mono">Heavier Services HVK</td><td>1kg</td><td class="num">1</td><td>Italy</td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="mono">Royal Mail</td><td class="mono">Heavier Services HVK</td><td>3kg</td><td class="num">3</td><td>Italy</td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="mono">Royal Mail</td><td class="mono">Heavier Services HVK</td><td>9kg</td><td class="num">9</td><td>Hungary</td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="mono">Royal Mail</td><td class="mono">Heavier Services HVK</td><td>30kg</td><td class="num">30</td><td>Spain</td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="mono">Royal Mail</td><td class="mono">Standard DDU (MP7)</td><td>5kg</td><td class="num">5</td><td>Netherlands</td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+<tr><td class="mono">Evri</td><td class="mono">DDP International</td><td>30kg</td><td class="num">30</td><td>Sweden</td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td class="mono">2026-01-01</td><td><span class="tag crit">Unavailable</span></td></tr>
+    </tbody></table>
+  </div>
+  <div class="prose"><p style="margin-top:14px"><b>Please confirm:</b> is <code>postage_value</code> quoted
+  <i>excluding</i> VAT? UK international postage is normally zero-rated. If you confirm that, all 544 rows gain a
+  Rate ex VAT immediately. We have deliberately <b>not assumed it</b>.</p></div>
+</section>
+
+<section id="booking">
+  <div class="sechead">
+    <p class="eyebrow">Dataset 3 of 5</p>
+    <h2>Daily Booking Log — W27 2026</h2>
+    <p class="srcline">Source: <b>order_transaction</b> × <b>order_shipping_billing_detail</b> × <b>blos.local_postage</b> · 198 rows · 12 shown</p>
+  </div>
+  <div class="prose">
+    <p>Each row is a <i>bucket</i> — one date × carrier × service × status. Carrier, Service, Destination, Weight Band,
+    Rate and VAT are pulled from the rate card by matching the shipment’s <code>carrier_name</code> to the rate card’s
+    <code>service_name</code>. <b>2,313 of 3,638 labels match.</b> The remainder — all DHL, all GLS, international Evri,
+    and Wayfair — have no rate-card row and therefore no forecast.</p>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="k">Booking rows</div><div class="v">198</div><div class="s">buckets</div></div>
+    <div class="stat"><div class="k">Qty labels</div><div class="v">3,638</div><div class="s">customer + service</div></div>
+    <div class="stat"><div class="k">Priced labels</div><div class="v">2,313</div><div class="s">64% of total</div></div>
+    <div class="stat"><div class="k">Forecast ex VAT</div><div class="v">£5,586.87</div><div class="s">Qty × rate</div></div>
+    <div class="stat"><div class="k">VAT</div><div class="v">£1,117.35</div><div class="s">at 20%</div></div>
+    <div class="stat"><div class="k">Forecast inc VAT</div><div class="v">£6,704.22</div><div class="s">priced labels only</div></div>
+  </div>
+  <div class="scroll">
+    <table><thead><tr>
+      <th>Booking ID</th><th>Date</th><th>Order ID</th><th>Carrier</th><th>Service</th><th>Destination</th>
+      <th>Weight band</th><th>Qty</th><th>Rate ex VAT</th><th>Forecast ex VAT</th><th>VAT %</th><th>VAT £</th>
+      <th>Forecast inc VAT</th><th>Status</th><th>Label type</th><th>Week</th>
+    </tr></thead><tbody>
+<tr><td class="mono">BKG-00021</td><td class="mono">2026-06-29</td><td><span class="tag crit">Unavailable</span></td><td>SMART TRACK<div class="sub">raw: ROYAL MAIL TRACKED 48 NEX(2kg)</div></td><td class="mono">ROYAL MAIL TRACKED 48 NEX (2kg)</td><td>UK Domestic</td><td>2kg</td><td class="num">249</td><td class="num">£2.27</td><td class="num">£564.41</td><td class="num">20%</td><td class="num">£112.88</td><td class="num">£677.29</td><td>Booked</td><td>Customer Order</td><td class="mono">W27 2026</td></tr>
+<tr><td class="mono">BKG-00018</td><td class="mono">2026-06-29</td><td><span class="tag crit">Unavailable</span></td><td>SMART TRACK<div class="sub">raw: ROYAL MAIL 48 LARGE LETTER NEX</div></td><td class="mono">ROYAL MAIL 48 LARGE LETTER NEX</td><td>UK Domestic</td><td><span class="tag crit">Unavailable</span></td><td class="num">71</td><td class="num">£2.03</td><td class="num">£144.36</td><td class="num">20%</td><td class="num">£28.87</td><td class="num">£173.23</td><td>Booked</td><td>Customer Order</td><td class="mono">W27 2026</td></tr>
+<tr><td class="mono">BKG-00003</td><td class="mono">2026-06-29</td><td><span class="tag crit">Unavailable</span></td><td>DPD<div class="sub">raw: DPD Next Day UK</div></td><td class="mono">DPD Next Day UK</td><td>UK Domestic</td><td><span class="tag crit">Unavailable</span></td><td class="num">8</td><td class="num">£5.61</td><td class="num">£44.87</td><td class="num">20%</td><td class="num">£8.97</td><td class="num">£53.84</td><td>Booked</td><td>Customer Order</td><td class="mono">W27 2026</td></tr>
+<tr><td class="mono">BKG-00009</td><td class="mono">2026-06-29</td><td><span class="tag crit">Unavailable</span></td><td>Evri<div class="sub">raw: Evri Hermes 2Kg 48h</div></td><td class="mono">Evri Hermes 2Kg 48h</td><td>UK Domestic</td><td>2kg</td><td class="num">2</td><td class="num">£2.49</td><td class="num">£4.98</td><td class="num">20%</td><td class="num">£1.00</td><td class="num">£5.98</td><td>Booked</td><td>Customer Order</td><td class="mono">W27 2026</td></tr>
+<tr><td class="mono">BKG-00065</td><td class="mono">2026-07-01</td><td><span class="tag crit">Unavailable</span></td><td>ROYAL MAIL<div class="sub">raw: CRL48 500g LL</div></td><td class="mono">CRL48 500g LL</td><td>UK Domestic</td><td>500g</td><td class="num">1</td><td class="num">£1.91</td><td class="num">£1.91</td><td class="num">20%</td><td class="num">£0.38</td><td class="num">£2.29</td><td>Booked</td><td>Customer Order</td><td class="mono">W27 2026</td></tr>
+<tr><td class="mono">BKG-00030</td><td class="mono">2026-06-29</td><td><span class="tag crit">Unavailable</span></td><td><span class="tag crit">Unavailable</span><div class="sub">raw: Trossingen schmutter DHL Paket</div></td><td class="mono"><span class="tag crit">Unavailable</span></td><td><span class="tag crit">Unavailable</span></td><td><span class="tag crit">Unavailable</span></td><td class="num">17</td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td>Booked</td><td>Customer Order</td><td class="mono">W27 2026</td></tr>
+<tr><td class="mono">BKG-00033</td><td class="mono">2026-06-29</td><td><span class="tag crit">Unavailable</span></td><td><span class="tag crit">Unavailable</span><div class="sub">raw: Trossingen schmutter GLS</div></td><td class="mono"><span class="tag crit">Unavailable</span></td><td><span class="tag crit">Unavailable</span></td><td><span class="tag crit">Unavailable</span></td><td class="num">5</td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td>Booked</td><td>Customer Order</td><td class="mono">W27 2026</td></tr>
+<tr><td class="mono">BKG-00010</td><td class="mono">2026-06-29</td><td><span class="tag crit">Unavailable</span></td><td><span class="tag crit">Unavailable</span><div class="sub">raw: Evri Hermes 2Kg International</div></td><td class="mono"><span class="tag crit">Unavailable</span></td><td><span class="tag crit">Unavailable</span></td><td><span class="tag crit">Unavailable</span></td><td class="num">19</td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td>Booked</td><td>Customer Order</td><td class="mono">W27 2026</td></tr>
+<tr><td class="mono">BKG-00034</td><td class="mono">2026-06-29</td><td><span class="tag crit">Unavailable</span></td><td><span class="tag crit">Unavailable</span><div class="sub">raw: Wayfair Shipping</div></td><td class="mono"><span class="tag crit">Unavailable</span></td><td><span class="tag crit">Unavailable</span></td><td><span class="tag crit">Unavailable</span></td><td class="num">16</td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td>3rd-party · no cost</td><td>Customer Order</td><td class="mono">W27 2026</td></tr>
+<tr><td class="mono">BKG-00014</td><td class="mono">2026-06-29</td><td><span class="tag crit">Unavailable</span></td><td>Evri<div class="sub">raw: Evri Hermes 5Kg 48h</div></td><td class="mono">Evri Hermes 5Kg 48h</td><td>UK Domestic</td><td>5kg</td><td class="num">1</td><td class="num">£2.81</td><td class="num">£2.81</td><td class="num">20%</td><td class="num">£0.56</td><td class="num">£3.37</td><td>CS-replacement</td><td>Replacement Out</td><td class="mono">W27 2026</td></tr>
+<tr><td class="mono">BKG-00012</td><td class="mono">2026-06-29</td><td><span class="tag crit">Unavailable</span></td><td>Evri<div class="sub">raw: Evri Hermes 5Kg 24h</div></td><td class="mono">Evri Hermes 5Kg 24h</td><td>UK Domestic</td><td>5kg</td><td class="num">1</td><td class="num">£3.24</td><td class="num">£3.24</td><td class="num">20%</td><td class="num">£0.65</td><td class="num">£3.89</td><td><span class="tag crit">Unavailable</span></td><td><span class="tag crit">Unavailable</span></td><td class="mono">W27 2026</td></tr>
+<tr><td class="mono">BKG-00035</td><td class="mono">2026-06-29</td><td><span class="tag crit">Unavailable</span></td><td><span class="tag crit">Unavailable</span><div class="sub">raw: (NULL)</div></td><td class="mono"><span class="tag crit">Unavailable</span></td><td><span class="tag crit">Unavailable</span></td><td><span class="tag crit">Unavailable</span></td><td class="num">1</td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td class="num"><span class="tag crit">Unavailable</span></td><td>Booked</td><td>Customer Order</td><td class="mono">W27 2026</td></tr>
+    </tbody></table>
+  </div>
+  <div class="prose">
+    <p style="margin-top:14px"><b>Two things to know about this table.</b></p>
+    <p><b>Date is the order date, not the label-creation date.</b> The shipment table has <i>no date column at all</i>,
+    so a booking can only be dated by the order it belongs to. If Accounts needs true label dates, that column must be added.</p>
+    <p><b>Order ID is Unavailable by design</b> — each row aggregates many orders, so no single order reference applies.</p>
+  </div>
+</section>
+
+<section id="carriers">
+  <div class="sechead">
+    <p class="eyebrow">Dataset 4 of 5 · the main review item</p>
+    <h2>Carrier names — all 260 values</h2>
+    <p class="srcline">Source: <b>order_shipping_billing_detail.carrier_name</b> · 260 distinct values across 1,097,213 labels</p>
+  </div>
+  <div class="prose">
+    <p>The workbook allows <b>10 carriers</b>. The database holds <b>260 free-text values</b> in a single column that
+    mixes carriers, services, countries, warehouse addresses and statuses. The lookup table that used to normalise them,
+    <code>public.carrier_service</code>, <b>was dropped today</b>.</p>
+    <p>The <i>Proposed family</i> column below is a mechanical guess from the text — it is not authoritative. We need
+    Accounts to confirm or correct each grouping, and especially to resolve the <span class="tag warn">CONFLICT</span>
+    rows, where a name matches two carriers at once.</p>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="k">Royal Mail</div><div class="v">38</div><div class="s">188,906 labels</div></div>
+    <div class="stat"><div class="k">Evri / Hermes</div><div class="v">23</div><div class="s">142,593 labels</div></div>
+    <div class="stat"><div class="k">DHL</div><div class="v">10</div><div class="s">108,150 labels</div></div>
+    <div class="stat"><div class="k">GLS</div><div class="v">11</div><div class="s">37,759 labels</div></div>
+    <div class="stat"><div class="k">Conflict</div><div class="v">17</div><div class="s">197,227 labels</div></div>
+    <div class="stat"><div class="k">Not a carrier</div><div class="v">53</div><div class="s">243,224 labels</div></div>
+    <div class="stat"><div class="k">Needs decision</div><div class="v">88</div><div class="s">74,100 labels</div></div>
+  </div>
+  <div class="callout">
+    <h3>Three findings that need a decision, not a fix</h3>
+    <p><b>The single most common “carrier” is the empty string</b> — 231,875 labels (21% of the table) have
+    <code>carrier_name = ''</code>. That is an empty string, not NULL, so it passes any “is it filled in?” check.</p>
+    <p><b>17 names match two carriers at once</b>, e.g. <code>Smart Track Royalmail 2nd 100g LL</code> — is that
+    Smart Track, or Royal Mail? These 17 names cover <b>197,227 labels</b>, so the answer materially changes
+    per-carrier spend.</p>
+    <p><b>Two label types are hiding in the carrier column:</b> <code>collection order</code> (144) and
+    <code>Return 2kg Hermes</code> (137). Those are not carriers.</p>
+  </div>
+  <div class="scroll tall">
+    <table><thead><tr>
+      <th>carrier_name (verbatim)</th><th>Labels</th><th>Proposed family</th><th>Data-quality note</th>
+    </tr></thead><tbody>
+<tr><td class="mono">(EMPTY STRING)</td><td class="num">231,875</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell">empty string, not NULL</td></tr>
+<tr><td class="mono">Smart Track Hermes 2Kg</td><td class="num">119,143</td><td><span class="tag warn">CONFLICT — Smart Track or Evri?</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Evri Hermes 2Kg 48h</td><td class="num">106,784</td><td><span class="tag ok">Evri</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Amazon Shipping</td><td class="num">63,436</td><td><span class="tag ok">Amazon Shipping</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Trossingen kronen DHL Kleinpaket</td><td class="num">41,197</td><td><span class="tag ok">DHL</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Royal Mail Internal</td><td class="num">40,353</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">ROYAL MAIL TRACKED 48 NEX(2kg)</td><td class="num">40,260</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">ParcelDenOnline Standard Package</td><td class="num">31,913</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Trossingen schmutter DHL Paket</td><td class="num">26,498</td><td><span class="tag ok">DHL</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Wayfair Shipping</td><td class="num">24,682</td><td><span class="tag ok">Wayfair</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Trossingen schmutter GLS</td><td class="num">20,307</td><td><span class="tag ok">GLS</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Smart Track AMAZON SHIPPING TWO DAY LARGE LETTER</td><td class="num">19,188</td><td><span class="tag warn">CONFLICT — Smart Track or Amazon Shipping?</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">CRL48 100g LL</td><td class="num">18,268</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">CRL48 250g LL</td><td class="num">16,126</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Trossingen schmutter DHL Kleinpaket</td><td class="num">15,485</td><td><span class="tag ok">DHL</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Trossingen schmutter Stamp</td><td class="num">15,108</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Smart Track Royalmail 2nd 100g LL</td><td class="num">13,602</td><td><span class="tag warn">CONFLICT — Smart Track or Royal Mail?</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Trossingen schmutter DHL Paket International</td><td class="num">13,345</td><td><span class="tag ok">DHL</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Tracked 48 RM 750g LL Non Signature</td><td class="num">12,919</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">ROYAL MAIL 48 LARGE LETTER NEX</td><td class="num">12,863</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Smart Track Hermes 5Kg</td><td class="num">12,338</td><td><span class="tag warn">CONFLICT — Smart Track or Evri?</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Smart Track AMAZON SHIPPING 2 DAY SMALL</td><td class="num">11,544</td><td><span class="tag warn">CONFLICT — Smart Track or Amazon Shipping?</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">95g LL</td><td class="num">10,129</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Evri Hermes 5Kg 48h</td><td class="num">9,069</td><td><span class="tag ok">Evri</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Smart Track Royalmail 2nd 250g LL</td><td class="num">9,017</td><td><span class="tag warn">CONFLICT — Smart Track or Royal Mail?</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Trossingen kronen DHL Paket</td><td class="num">8,815</td><td><span class="tag ok">DHL</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Royal Mail International Tracked Parcel</td><td class="num">8,466</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Evri Hermes 2Kg International</td><td class="num">8,144</td><td><span class="tag ok">Evri</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">DPD Next Day UK</td><td class="num">7,712</td><td><span class="tag ok">DPD</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Trossingen GLS</td><td class="num">6,994</td><td><span class="tag ok">GLS</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Standard</td><td class="num">6,829</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Tracked 48 RM 2Kg Non Signature</td><td class="num">6,605</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Smart Track AMAZON 2 DAY STANDARD</td><td class="num">5,630</td><td><span class="tag warn">CONFLICT — Smart Track or Amazon Shipping?</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Etrak - Delivery Group</td><td class="num">5,609</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Hermes ParcelShop Postable (Shop To Door) by MyHermes</td><td class="num">5,225</td><td><span class="tag ok">Evri</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">ParcelDenOnline Standard Parcel</td><td class="num">5,130</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Stamp</td><td class="num">4,960</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Evri Hermes 2Kg 24h</td><td class="num">4,923</td><td><span class="tag ok">Evri</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">245g LL</td><td class="num">4,467</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Smart Track Royalmail 2nd 1kg packets</td><td class="num">4,378</td><td><span class="tag warn">CONFLICT — Smart Track or Royal Mail?</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">DPD Two Day UK</td><td class="num">3,705</td><td><span class="tag ok">DPD</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">express24</td><td class="num">3,294</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">ROYAL MAIL TRACKED 48 NEX(5kg)</td><td class="num">3,248</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Evri Hermes 5Kg International</td><td class="num">3,048</td><td><span class="tag ok">Evri</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">GLS</td><td class="num">2,993</td><td><span class="tag ok">GLS</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UPS Standard</td><td class="num">2,953</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Duisburg GLS</td><td class="num">2,936</td><td><span class="tag ok">GLS</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Canada Post Expedited</td><td class="num">2,730</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">CRL48 500g LL</td><td class="num">2,682</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">USPS Parcel Select Ground</td><td class="num">2,440</td><td><span class="tag ok">USPS</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Trossingen kronen DHL Paket International</td><td class="num">2,284</td><td><span class="tag ok">DHL</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">DE_DPBuecherWarensendung</td><td class="num">2,185</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Trossingen kronen Stamp</td><td class="num">1,926</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">DPD International</td><td class="num">1,882</td><td><span class="tag ok">DPD</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Trossingen kronen GLS</td><td class="num">1,870</td><td><span class="tag ok">GLS</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Rm manual</td><td class="num">1,723</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Trossingen schmutter GLS International</td><td class="num">1,633</td><td><span class="tag ok">GLS</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UPS International</td><td class="num">1,407</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Smart Track Royalmail 2nd 2kg packets</td><td class="num">1,372</td><td><span class="tag warn">CONFLICT — Smart Track or Royal Mail?</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">900g parcel</td><td class="num">1,328</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">NextDay</td><td class="num">1,266</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Hermes - Delivery Group 2Kg</td><td class="num">1,163</td><td><span class="tag ok">Evri</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Royal Mail International Tracked Parcel - HVK</td><td class="num">1,085</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Evri Hermes 5Kg 24h</td><td class="num">998</td><td><span class="tag ok">Evri</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">DE_GLSPaket</td><td class="num">933</td><td><span class="tag ok">GLS</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UK_myHermesDoorToDoorService</td><td class="num">915</td><td><span class="tag ok">Evri</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Wayfair Shipping DE</td><td class="num">886</td><td><span class="tag ok">Wayfair</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Evri Hermes 15Kg 24h</td><td class="num">784</td><td><span class="tag ok">Evri</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Tracked 24 RM 1Kg Non Signature</td><td class="num">575</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">international</td><td class="num">572</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">SecondDay</td><td class="num">494</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UK Next</td><td class="num">474</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Other</td><td class="num">471</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">DHL</td><td class="num">455</td><td><span class="tag ok">DHL</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Smart Track Royalmail 1st 1kg packets</td><td class="num">443</td><td><span class="tag warn">CONFLICT — Smart Track or Royal Mail?</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UK_OtherCourier3Days</td><td class="num">396</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Tracked 24 RM 750g LL Non Signature</td><td class="num">370</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Tracked 48 RM 5Kg Non Signature</td><td class="num">359</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UPS</td><td class="num">344</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Pakajo</td><td class="num">340</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">United Kingdom</td><td class="num">330</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">DPD</td><td class="num">328</td><td><span class="tag ok">DPD</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Evri Hermes 15Kg International</td><td class="num">307</td><td><span class="tag ok">Evri</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">CRL Royal Mail 24 Parcel</td><td class="num">285</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Hermes</td><td class="num">273</td><td><span class="tag ok">Evri</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">DE_HermesPaket</td><td class="num">267</td><td><span class="tag ok">Evri</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UK_OtherCourier</td><td class="num">247</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Smart Track Royalmail 1st 100g LL</td><td class="num">224</td><td><span class="tag warn">CONFLICT — Smart Track or Royal Mail?</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Intelcom Standard</td><td class="num">205</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">prime</td><td class="num">190</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Smart Track Royalmail 1st 250g LL</td><td class="num">185</td><td><span class="tag warn">CONFLICT — Smart Track or Royal Mail?</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Tracked 24 RM 2Kg Non Signature</td><td class="num">184</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Hermes - Delivery Group</td><td class="num">175</td><td><span class="tag ok">Evri</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Colissimo Colissimo France</td><td class="num">169</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Royal Mail</td><td class="num">159</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">collection order</td><td class="num">144</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell">label type, not a carrier</td></tr>
+<tr><td class="mono">CRL Royal Mail 24 Large Letter</td><td class="num">143</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Return 2kg Hermes</td><td class="num">137</td><td><span class="tag ok">Evri</span></td><td class="note-cell">label type, not a carrier</td></tr>
+<tr><td class="mono">Hermes - Delivery Group 5Kg</td><td class="num">136</td><td><span class="tag ok">Evri</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">FR_LivraisonEnRelaisMondialRelay</td><td class="num">131</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Std UK Dom_1</td><td class="num">127</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">CSV</td><td class="num">117</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Smart Track Hermes 15Kg</td><td class="num">111</td><td><span class="tag warn">CONFLICT — Smart Track or Evri?</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">USPS</td><td class="num">109</td><td><span class="tag ok">USPS</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">ICS</td><td class="num">101</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Std DE Dom_1</td><td class="num">94</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Mondial Relay Point Relais</td><td class="num">90</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Std UK Dom_2</td><td class="num">86</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Hermes UK</td><td class="num">83</td><td><span class="tag ok">Evri</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Trossingen kronen GLS International</td><td class="num">82</td><td><span class="tag ok">GLS</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Tracked 48 RM 15Kg Non Signature</td><td class="num">74</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Evri Hermes 15Kg 48h</td><td class="num">71</td><td><span class="tag ok">Evri</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">DE_DHLPackchen</td><td class="num">68</td><td><span class="tag ok">DHL</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UK Second</td><td class="num">62</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Stallion Express</td><td class="num">61</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UK_PackLinkPostable</td><td class="num">60</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Local pickup</td><td class="num">56</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">BQ Standard</td><td class="num">53</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Standard Shipping</td><td class="num">49</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Evri Hermes 30Kg International</td><td class="num">42</td><td><span class="tag ok">Evri</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Expedited</td><td class="num">41</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Std FR Dom_2</td><td class="num">41</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">FedEx</td><td class="num">37</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">FreeEconomy</td><td class="num">34</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">CRL: Royal Mail 24 Parcel</td><td class="num">33</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">parcelforce</td><td class="num">32</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">AMAZON SHIPPING TWO DAY LARGE LETTER<span class="ctl">⏎</span></td><td class="num">30</td><td><span class="tag ok">Amazon Shipping</span></td><td class="note-cell">embedded newline</td></tr>
+<tr><td class="mono">firstclass</td><td class="num">30</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Std DE Dom_2</td><td class="num">30</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UPS Express</td><td class="num">30</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">DE_HermesPackchen</td><td class="num">28</td><td><span class="tag ok">Evri</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">CRL: Royal Mail 24 Large Letter</td><td class="num">27</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">DE_StandardversandAusDemAusland</td><td class="num">27</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Smart Track AMAZON SHIPPING 2 DAY MEDIUM</td><td class="num">27</td><td><span class="tag warn">CONFLICT — Smart Track or Amazon Shipping?</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Express</td><td class="num">25</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UK_SellersStandardInternationalRate</td><td class="num">24</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Canada Post</td><td class="num">23</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Smart Track Royalmail 1st 1kg packets (Signed)</td><td class="num">22</td><td><span class="tag warn">CONFLICT — Smart Track or Royal Mail?</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">AMAZON-SRM FBA</td><td class="num">20</td><td><span class="tag ok">Amazon Shipping</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Free Shipping</td><td class="num">20</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">DC Volt Prime</td><td class="num">19</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Issue</td><td class="num">19</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Standard Postage</td><td class="num">19</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">TPN Royal Mail Tracked 24 Non Signature</td><td class="num">18</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UK_OtherCourier48</td><td class="num">18</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UK_OtherCourierOrDeliveryInternational</td><td class="num">18</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">DB Schenker</td><td class="num">17</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">europriority</td><td class="num">16</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">EVRI</td><td class="num">14</td><td><span class="tag ok">Evri</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">stamps</td><td class="num">14</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Duisburg Stamp</td><td class="num">12</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">DE_PaketInternational</td><td class="num">11</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">MFN Std</td><td class="num">11</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">CA stock</td><td class="num">10</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono"> GLS</td><td class="num">9</td><td><span class="tag ok">GLS</span></td><td class="note-cell">leading/trailing space</td></tr>
+<tr><td class="mono">APC Postal Logistics</td><td class="num">9</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">eBayPlus</td><td class="num">9</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">FR_HomeDelivery</td><td class="num">9</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Not Set Begin</td><td class="num">9</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">DE_SparversandAusDemAusland</td><td class="num">8</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">StandardShippingFromOutsideUS</td><td class="num">8</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Access Worldwide</td><td class="num">7</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">AMAZON-Dcvoltage FBA</td><td class="num">7</td><td><span class="tag ok">Amazon Shipping</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">AMAZON-LEDsone FBA</td><td class="num">7</td><td><span class="tag ok">Amazon Shipping</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">FR_ChronopostChronoRelais</td><td class="num">7</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">FR_EconomyDeliveryFromAbroad</td><td class="num">7</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Royal Mail 48 </td><td class="num">7</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell">leading/trailing space</td></tr>
+<tr><td class="mono">Std IT Dom_2</td><td class="num">7</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Unit 3 Marshbrook Cl</td><td class="num">7</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">CPC</td><td class="num">6</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Etrak ( Ontrak )</td><td class="num">6</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Std UK Intl_2</td><td class="num">6</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">FR_ColiposteColissimo</td><td class="num">5</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">ShippingMethodStandard</td><td class="num">5</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UK_HermesNextDay</td><td class="num">5</td><td><span class="tag ok">Evri</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UPSGround</td><td class="num">5</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Vintagelite Prime</td><td class="num">5</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">FR_Autre</td><td class="num">4</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">LEDSone Prime</td><td class="num">4</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Not Set</td><td class="num">4</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Std DE Dom_3</td><td class="num">4</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Std FR Dom_6</td><td class="num">4</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UPS Canada</td><td class="num">4</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">AMZSTD</td><td class="num">3</td><td><span class="tag ok">Amazon Shipping</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">custom</td><td class="num">3</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">customshipping</td><td class="num">3</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">DE_SonstigeInternational</td><td class="num">3</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Etrak</td><td class="num">3</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">LEDSone DE LTD</td><td class="num">3</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Other Courier 3 days</td><td class="num">3</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">SRM Prime</td><td class="num">3</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Std IT Dom_3</td><td class="num">3</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UK_Parcelforce24</td><td class="num">3</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Australia Post</td><td class="num">2</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">CA_PostLettermail</td><td class="num">2</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">CA_StandardInternational</td><td class="num">2</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">CA_UPSStandardUnitedStates</td><td class="num">2</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Default</td><td class="num">2</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">DHL Express</td><td class="num">2</td><td><span class="tag ok">DHL</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">EconomyShippingFromOutsideUS</td><td class="num">2</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">First Postage</td><td class="num">2</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">FR_StandardDeliveryFromAbroad</td><td class="num">2</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Hermes International</td><td class="num">2</td><td><span class="tag ok">Evri</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Ireland</td><td class="num">2</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Parcel2Go.com</td><td class="num">2</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Purolator Ground</td><td class="num">2</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Smart Track Royalmail 2nd 100g LL (Signed)</td><td class="num">2</td><td><span class="tag warn">CONFLICT — Smart Track or Royal Mail?</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Standard International</td><td class="num">2</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">StarTrack</td><td class="num">2</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Std ES Dom_3</td><td class="num">2</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Std FR Dom_3</td><td class="num">2</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Std UK Intl_3</td><td class="num">2</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">TPN: Royal Mail Tracked 24 - Non Signature</td><td class="num">2</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UK_CollectPlusStandard</td><td class="num">2</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">USPSFirstClass</td><td class="num">2</td><td><span class="tag ok">USPS</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">(Prime) NextDay</td><td class="num">1</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">(Prime) SecondDay</td><td class="num">1</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Amazon Shipping Standard Tracked</td><td class="num">1</td><td><span class="tag ok">Amazon Shipping</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">CA_PostRegularParcel</td><td class="num">1</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">CA_StandardShipping</td><td class="num">1</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Colis Prive</td><td class="num">1</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">DE_glsExpress</td><td class="num">1</td><td><span class="tag ok">GLS</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">DE_HomeDelivery</td><td class="num">1</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">DE_LieferungBordsteinkante</td><td class="num">1</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">DE_Pickup</td><td class="num">1</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Deutsche Post</td><td class="num">1</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">DHL International</td><td class="num">1</td><td><span class="tag ok">DHL</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Duisburg GLS International</td><td class="num">1</td><td><span class="tag ok">GLS</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">FBA</td><td class="num">1</td><td><span class="tag ok">Amazon Shipping</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">GBDomesticExpress</td><td class="num">1</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">GTA GSM</td><td class="num">1</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">IE_SellersStandardRateInternational</td><td class="num">1</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">InPost 48 (Shop To Door) by InPost</td><td class="num">1</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">IT_StandardDeliveryFromAbroad</td><td class="num">1</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Landmark Global</td><td class="num">1</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">No shipping specified</td><td class="num">1</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">PromotionalShippingMethod</td><td class="num">1</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Royal Mail 24</td><td class="num">1</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Royal Mail Tracked 48</td><td class="num">1</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Royalmail</td><td class="num">1</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Shipped from seller</td><td class="num">1</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Smart Track Royalmail 1st 100g LL (Signed)</td><td class="num">1</td><td><span class="tag warn">CONFLICT — Smart Track or Royal Mail?</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Smart Track Yodel XPECT 48 NON POD</td><td class="num">1</td><td><span class="tag ok">Smart Track</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Stallion Economy CA Plus</td><td class="num">1</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">StandardInternational</td><td class="num">1</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">std-intl</td><td class="num">1</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">std-se</td><td class="num">1</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Std DE Intl_3</td><td class="num">1</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Std FR Intl_2</td><td class="num">1</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">track your parcel</td><td class="num">1</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UK_CollectInPerson</td><td class="num">1</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UK_CollectInPersonInternational</td><td class="num">1</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UK_RoyalMail48</td><td class="num">1</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UK_RoyalMailAirmailInternational</td><td class="num">1</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UK_RoyalMailSpecialDeliveryNextDay</td><td class="num">1</td><td><span class="tag ok">Royal Mail</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">Unit 3 Marshbrook Close,</td><td class="num">1</td><td><span class="tag crit">Not a carrier</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">UPS Internatioal</td><td class="num">1</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell">spelling</td></tr>
+<tr><td class="mono">USPSParcel</td><td class="num">1</td><td><span class="tag ok">USPS</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">USPSPriority</td><td class="num">1</td><td><span class="tag ok">USPS</span></td><td class="note-cell"></td></tr>
+<tr><td class="mono">XDP</td><td class="num">1</td><td><span class="tag crit">Needs decision</span></td><td class="note-cell"></td></tr>
+
+    </tbody></table>
+  </div>
+</section>
+
+<section id="vocab">
+  <div class="sechead">
+    <p class="eyebrow">Dataset 5 of 5</p>
+    <h2>Status &amp; Label Type — what we can and cannot derive</h2>
+    <p class="srcline">Source: <b>order_transaction.source_name</b> · workbook vocabulary from Booking Log sheet</p>
+  </div>
+  <div class="prose">
+    <p>The workbook defines 8 Status values and 7 Label Types. PostgreSQL has no such column. What it does have is
+    <code>source_name</code>, a real enum on the order table, from which we can derive some of them honestly.</p>
+  </div>
+  <div class="scroll">
+    <table><thead><tr>
+      <th>Workbook Status</th><th>Workbook Label Type</th><th>Derived from</th><th>W27 rows</th><th>Status</th>
+    </tr></thead><tbody>
+      <tr><td>Booked</td><td>Customer Order</td><td class="mono">source_name = AMAZON / EBAY / SHOPIFY / B&amp;Q / MANUAL OM / ONBUY</td><td class="num">3,470</td><td><span class="tag ok">Derived</span></td></tr>
+      <tr><td>3rd-party · no cost</td><td>Customer Order</td><td class="mono">carrier_name contains “Wayfair”</td><td class="num">146</td><td><span class="tag ok">Derived</span></td></tr>
+      <tr><td>CS-replacement</td><td>Replacement Out</td><td class="mono">source_name = REPLACEMENT</td><td class="num">18</td><td><span class="tag ok">Derived</span></td></tr>
+      <tr><td>—</td><td>—</td><td class="mono">source_name = RESEND</td><td class="num">2</td><td><span class="tag warn">No workbook Status exists</span></td></tr>
+      <tr><td>KILL — reclassify</td><td>Other Service</td><td class="mono">requires a carrier map to prove a carrier is unmappable</td><td class="num">0</td><td><span class="tag crit">Not derivable</span></td></tr>
+      <tr><td>CS-missing-part</td><td>Missing Part Out</td><td class="mono">no source</td><td class="num">0</td><td><span class="tag crit">Not derivable</span></td></tr>
+      <tr><td>CS-collection</td><td>Collection In</td><td class="mono">no source</td><td class="num">0</td><td><span class="tag crit">Not derivable</span></td></tr>
+      <tr><td>Refund — customer return</td><td>Return Label Out</td><td class="mono">no source</td><td class="num">0</td><td><span class="tag crit">Not derivable</span></td></tr>
+      <tr><td>eBay return — customer initiated</td><td>Return Label In</td><td class="mono">partially: amazon_returns.label_type</td><td class="num">—</td><td><span class="tag warn">Returns table only</span></td></tr>
+    </tbody></table>
+  </div>
+  <div class="prose"><p style="margin-top:14px">We have <b>not</b> mapped <code>RESEND</code> to “Missing Part Out”.
+  Nothing in the database says that is what it means. Two rows show Unavailable rather than a guess.</p></div>
+</section>
+
+<section id="missing">
+  <div class="sechead">
+    <p class="eyebrow">Register</p>
+    <h2>Workbook columns with no PostgreSQL source</h2>
+    <p class="srcline">Verified absent on 2026-07-10 by scanning every column in every schema</p>
+  </div>
+  <div class="scroll">
+    <table><thead><tr>
+      <th>Workbook column</th><th>What is missing</th><th>Consequence</th><th>Owner</th>
+    </tr></thead><tbody>
+      <tr><td>Weight Band</td><td class="mono">no weight column is populated anywhere (4 candidates, all empty)</td><td>Rate lookup cannot use weight. The workbook calls volumetric reweigh the #1 cause of leakage.</td><td>Schema + ETL</td></tr>
+      <tr><td>Service</td><td class="mono">no service_tier column</td><td>Service is fused into carrier_name.</td><td>Schema</td></tr>
+      <tr><td>Destination (zone)</td><td class="mono">no destination_zone column</td><td>Only country is known, not the workbook’s zone codes.</td><td>Schema</td></tr>
+      <tr><td>Date (label created)</td><td class="mono">shipment table has no date column at all</td><td>Bookings are dated by order date. 6,958 labels with no order can never be dated.</td><td>Schema</td></tr>
+      <tr><td>Booking ID</td><td class="mono">no booking table</td><td>We generate BKG-00001… sequentially for display.</td><td>Schema</td></tr>
+      <tr><td>Status (lifecycle)</td><td class="mono">shipment_status is Completed / New / Cancelled</td><td>That is a fulfilment state, not the booking lifecycle.</td><td>Schema</td></tr>
+      <tr><td>Notes</td><td class="mono">no column in either rate-card table</td><td>Surcharge zones (Scottish Highlands, Isle of Man) cannot be distinguished.</td><td>Schema</td></tr>
+      <tr><td>Invoice £</td><td class="mono">no carrier invoice exists in any schema</td><td><b>Overbilling cannot be detected.</b> We compare our own recorded charge against a baseline of itself.</td><td>Schema + ETL</td></tr>
+      <tr><td>VAT % (19% / 0%)</td><td class="mono">vat_rate_percentage = 20.00 on all rows</td><td>German and zero-rated VAT cannot be expressed.</td><td>ETL</td></tr>
+    </tbody></table>
+  </div>
+</section>
+
+<section id="asks">
+  <div class="sechead">
+    <p class="eyebrow">Action required</p>
+    <h2>What we need from the Accounts Team</h2>
+  </div>
+  <ol class="asks">
+    <li><strong>Is Smart Track a carrier or a reseller?</strong> 17 carrier names match both Smart Track and another
+      carrier, covering 197,227 labels. Your answer decides who Royal Mail volume is attributed to.</li>
+    <li><strong>Confirm the 260 carrier names in Dataset 4.</strong> Correct any wrong family, and tell us what the 88
+      “Needs decision” values are. This is the single cheapest fix available and it unblocks every per-carrier figure.</li>
+    <li><strong>Is international <code>postage_value</code> ex-VAT?</strong> If yes, 544 international rate rows gain a
+      Rate ex VAT with no schema change.</li>
+    <li><strong>Where is the DHL rate card?</strong> DHL is our second-largest carrier by spend (£3,035.67 in W27) and
+      has no rates in the database. GLS and Wayfair are also absent.</li>
+    <li><strong>Should W27 be frozen at close?</strong> Orders are still being back-dated into a closed week, so two
+      reports run days apart will legitimately disagree.</li>
+    <li><strong>Was <code>public.carrier_service</code> meant to be dropped?</strong> It held 380 carrier names and
+      disappeared today. It is the natural home for the mapping in Q2.</li>
+    <li><strong>Confirm the empty-string carrier.</strong> 231,875 labels have <code>carrier_name = ''</code>.
+      Is that expected, or an ingestion fault?</li>
+  </ol>
+</section>
+
+<footer>
+  <p>Prepared from a read-only session against <code>order_management_copy</code> on 2026-07-10. No database object was
+  created, altered or written. Rate-card and booking-log datasets carry MD5 checksums taken inside PostgreSQL and
+  re-verified against the delivered data, so the figures in this pack are provably identical to the database.
+  Customer names, addresses, emails and phone numbers exist in <code>order_shipping_billing_detail</code> and have been
+  deliberately excluded from this document.</p>
+</footer>
+</div>
